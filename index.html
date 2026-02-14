@@ -1,39 +1,63 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Aura AI — Оплата</title>
-<style>
-body { background: #05050a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; text-align: center; width: 300px; }
-input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; }
-button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #6366f1; color: white; font-weight: bold; cursor: pointer; }
-.footer { margin-top: 20px; font-size: 10px; color: #666; text-align: left; line-height: 1.4; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura AI — Оплата Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #05050a; color: white; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; max-width: 400px; width: 90%; }
+        h1 { font-size: 28px; margin-bottom: 10px; background: linear-gradient(45deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        input { width: 100%; padding: 12px; margin: 20px 0; border-radius: 12px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #6366f1; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #4f46e5; transform: translateY(-2px); }
+        .footer { margin-top: 30px; font-size: 12px; color: #666; line-height: 1.6; }
+        a { color: #4b5563; text-decoration: none; margin: 0 10px; }
+    </style>
 </head>
 <body>
-<div class="card">
-<h2>Aura AI Pro</h2>
-<p>Введите ваш ID из приложения</p>
-<input type="text" id="user-id" placeholder="ID пользователя">
-<p><strong>Цена: 990 руб.</strong></p>
-<button onclick="alert('Оплата заработает после одобрения ЮKassa')">Оплатить доступ</button>
-<div class="footer">
-Исполнитель: Шкуренко Андрей Александрович
+    <div class="card">
+        <h1>Aura AI Pro</h1>
+        <p>Введите ваш ID из приложения для активации доступа</p>
+        
+        <input type="text" id="userId" placeholder="Ваш ID (например, 12345)">
+        <button onclick="handlePayment()">Оплатить 990 ₽</button>
 
+        <div class="footer">
+            Исполнитель: Шкуренко Андрей Александрович<br>
+            ИНН: 614550465916 | Arharius@yandex.ru<br>
+            <div style="margin-top:10px;">
+                <a href="/terms.html">Оферта</a>
+                <a href="/privacy.html">Конфиденциальность</a>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        // Инициализация базы данных
+        const supabaseUrl = 'https://moqcrppxzfajqyifyhjq.supabase.co';
+        const supabaseKey = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_';
+        const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
 
-ИНН: 614550465916
+        async function handlePayment() {
+            const id = document.getElementById('userId').value;
+            if (!id) return alert('Пожалуйста, введите ID');
 
+            // 1. Сохраняем намерение оплаты в базу
+            const { error } = await supabase
+                .from('user_subscriptions')
+                .upsert({ user_id: id, is_pro: true });
 
-
-Email: Arharius@yandex.ru
-  <div style="margin-top: 15px;">
-    <a href="/terms.html" style="color:#4b5563; margin-right:10px;">Оферта</a>
-    <a href="/privacy.html" style="color:#4b5563;">Конфиденциальность</a>
-</div>
-</div>
-</div>
+            if (error) {
+                console.error(error);
+                alert('Ошибка связи с базой данных');
+            } else {
+                // 2. Перенаправляем на оплату (здесь будет ваша ссылка из ЮKassa)
+                alert('ID подтвержден. Переходим к оплате...');
+                window.location.href = 'https://yookassa.ru/my/i/ВАША_ССЫЛКА_ТУТ'; 
+            }
+        }
+    </script>
 </body>
 </html>
