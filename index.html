@@ -3,118 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI</title>
+    <title>Aura AI — Ваш эксперт</title>
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
         body {
-            background-color: #0f0c29; /* Темный фон как на иконке */
+            background-color: #0f0c29;
             background-image: linear-gradient(315deg, #0f0c29 0%, #302b63 74%, #24243e 100%);
             color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            min-height: 100vh;
             box-sizing: border-box;
         }
         h1 {
-            font-weight: 300;
-            margin-bottom: 10px;
-            background: -webkit-linear-gradient(#00d2ff, #3a7bd5);
+            font-size: 24px;
+            margin: 0;
+            background: linear-gradient(#00d2ff, #3a7bd5);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .subtitle {
-            font-size: 14px;
-            color: #aab2bd;
-            margin-bottom: 40px;
+        .subtitle { font-size: 12px; color: #aab2bd; margin-bottom: 20px; }
+        
+        /* Роли */
+        .roles-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            scrollbar-width: none;
         }
+        .roles-container::-webkit-scrollbar { display: none; }
+        .role-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .role-btn.active {
+            background: #9733ee;
+            border-color: #da22ff;
+            box-shadow: 0 0 10px rgba(218, 34, 255, 0.5);
+        }
+
+        /* Основная карточка */
         .card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.07);
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 15px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .btn {
-            display: block;
+        .status { font-size: 11px; color: #00ff88; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        textarea {
             width: 100%;
-            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            padding: 12px;
+            min-height: 100px;
+            box-sizing: border-box;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+        .icon-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
             border-radius: 12px;
             border: none;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.1s;
         }
-        .btn:active {
-            transform: scale(0.98);
-        }
-        .btn-primary {
+        .btn-send { background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: white; }
+        .btn-pro {
             background: linear-gradient(45deg, #da22ff, #9733ee);
             color: white;
-            box-shadow: 0 4px 15px rgba(218, 34, 255, 0.3);
+            width: 100%;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(218, 34, 255, 0.4);
         }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
+
+        .pro-list {
+            list-style: none;
+            padding: 0;
+            font-size: 13px;
+            color: #eee;
+            margin: 15px 0;
         }
-        .status {
-            font-size: 12px;
-            color: #00ff88;
-            margin-bottom: 5px;
-        }
+        .pro-list li { margin-bottom: 8px; display: flex; align-items: center; }
+        .pro-list li::before { content: '✦'; color: #da22ff; margin-right: 10px; }
     </style>
 </head>
 <body>
 
     <h1>Aura AI</h1>
-    <div class="subtitle">Ваш персональный ассистент</div>
+    <div class="subtitle">Интеллектуальный бизнес-помощник</div>
 
-    <div class="card">
-        <div class="status">● System Online</div>
-        <h3>Новый диалог</h3>
-        <p style="font-size: 13px; color: #ccc; line-height: 1.5;">
-            Задайте вопрос, попросите написать текст или сгенерировать идею.
-        </p>
-        <button class="btn btn-secondary" onclick="startChat()">Начать чат</button>
+    <div class="roles-container">
+        <button class="role-btn active" onclick="setRole(this, 'Общий помощник')">🤖 Общий</button>
+        <button class="role-btn" onclick="setRole(this, 'Юрист-консультант')">⚖️ Юрист</button>
+        <button class="role-btn" onclick="setRole(this, 'Маркетолог')">📈 Маркет</button>
+        <button class="role-btn" onclick="setRole(this, 'Методист')">🎓 Учеба</button>
+        <button class="role-btn" onclick="setRole(this, 'Психолог')">🧘 Психолог</button>
     </div>
 
-    <div class="card" style="border: 1px solid #da22ff;">
-        <h3 style="margin-top:0;">Aura Pro 🚀</h3>
-        <ul style="font-size: 13px; color: #eee; padding-left: 20px; line-height: 1.6;">
-            <li>Безлимитные запросы</li>
-            <li>Ответы в 2 раза быстрее</li>
-            <li>Доступ к GPT-4o</li>
+    <div class="card">
+        <div id="role-display" class="status">● Режим: Общий помощник</div>
+        <textarea id="user-input" placeholder="Введите текст, наговорите голосом или прикрепите фото документа..."></textarea>
+        
+        <div class="controls">
+            <div style="display: flex; gap: 10px;">
+                <label class="icon-btn">
+                    📷
+                    <input type="file" accept="image/*" style="display:none" onchange="handleFile(this)">
+                </label>
+                <button class="icon-btn" onclick="toggleVoice()" id="voice-btn">🎤</button>
+            </div>
+            <button class="btn btn-send" onclick="sendToAI()">Отправить</button>
+        </div>
+    </div>
+
+    <div class="card" style="border: 1px solid rgba(218, 34, 255, 0.4); background: rgba(218, 34, 255, 0.05);">
+        <h3 style="margin: 0; color: #da22ff;">Aura Pro — Безлимит</h3>
+        <ul class="pro-list">
+            <li>Юридический анализ документов по фото</li>
+            <li>Голосовое общение с экспертом</li>
+            <li>Генерация постов и планов без ограничений</li>
         </ul>
-        <button id="pay-button" class="btn btn-primary">Активировать за 990₽</button>
+        <button id="pay-button" class="btn btn-pro">Активировать за 990₽</button>
     </div>
 
     <script>
-        // Функция-имитация чата
-        function startChat() {
-            alert("Инициализация нейросети...\n\n(Функция чата будет доступна после проверки подписки)");
+        let currentRole = 'Общий помощник';
+        let recognition;
+
+        function setRole(btn, role) {
+            currentRole = role;
+            document.getElementById('role-display').innerText = '● Режим: ' + role;
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        // --- КОД ОПЛАТЫ (ОСТАВЛЯЕМ КАК БЫЛО) ---
-        const checkout = new window.YooMoneyCheckoutWidget({
-            confirmation_token: 'ВАШ_TOKEN_ОТ_БЭКЕНДА', // Сюда потом вставим код
-            return_url: 'https://aura-ai-pay.vercel.app/success',
-            error_callback: function(error) {
-                console.log(error);
+        // Голос (Web Speech API)
+        function toggleVoice() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Ваш браузер не поддерживает голосовой ввод.");
+                return;
             }
-        });
+            
+            if (!recognition) {
+                recognition = new webkitSpeechRecognition();
+                recognition.lang = 'ru-RU';
+                recognition.onresult = (event) => {
+                    document.getElementById('user-input').value += event.results[0][0].transcript;
+                    document.getElementById('voice-btn').style.background = 'rgba(255,255,255,0.1)';
+                };
+            }
+            recognition.start();
+            document.getElementById('voice-btn').style.background = '#ff4b2b';
+        }
 
+        function handleFile(input) {
+            if (input.files && input.files[0]) {
+                alert("Документ загружен. Оформите PRO для глубокого анализа в режиме [" + currentRole + "]");
+            }
+        }
+
+        function sendToAI() {
+            const text = document.getElementById('user-input').value;
+            if (!text) return;
+            alert("Анализирую ваш запрос как " + currentRole + "...\n\nВ бесплатной версии доступен только краткий ответ. Для полного анализа используйте Pro.");
+        }
+
+        // Кнопка оплаты
         document.getElementById('pay-button').addEventListener('click', function() {
-            // ПОКА СТАРАЯ ЗАГЛУШКА
-             alert("Переход к оплате..."); 
-            // Когда ЮKassa даст ссылку, раскомментируем и вставим её:
-            // window.location.href = 'ВАША_ССЫЛКА_ОТ_ЮКАССЫ';
+            alert("Подключение к платежному шлюзу...");
+            // window.location.href = 'ССЫЛКА_ЮКАССА'; 
         });
     </script>
-
 </body>
 </html>
