@@ -100,20 +100,44 @@
     function quickTask(p) { show('chat'); document.getElementById('user-msg').value = p; document.getElementById('user-msg').focus(); }
 
     // === 1. ГЕОЛОКАЦИЯ (Верхняя плашка) ===
-    async function initWeather() {
+   async function initWeather() {
         const weatherEl = document.getElementById('weather');
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                // Узнаем название города по координатам
-                const geo = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-                const geoData = await geo.json();
-                const city = geoData.address.city || geoData.address.town || "Локация";
-                
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+        
+        // Функция-помощник для загрузки данных по координатам
+        const getAndShow = async (lat, lon, cityName) => {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const d = await res.json();
-                weatherEl.innerText = `${city}: ${Math.round(d.current_weather.temperature)}°C`;
-            }, () => { weatherEl.innerText = "Москва: --°C"; });
+                weatherEl.innerText = `${cityName}: ${Math.round(d.current_weather.temperature)}°C`;
+            } catch(e) {
+                weatherEl.innerText = "Москва: --°C";
+            }
+        };
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                        // Пытаемся узнать город
+                        const geo = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                        const geoData = await geo.json();
+                        const city = geoData.address.city || geoData.address.town || geoData.address.village || "Локация";
+                        getAndShow(latitude, longitude, city);
+                    } catch(e) {
+                        getAndShow(latitude, longitude, "Мой город");
+                    }
+                },
+                (error) => {
+                    // ЕСЛИ ПОЛЬЗОВАТЕЛЬ ЗАПРЕТИЛ GPS — показываем Москву (для стора это важно)
+                    console.log("GPS отклонен, ставим Москву");
+                    getAndShow(55.75, 37.61, "Москва");
+                },
+                { timeout: 5000 } // Ждем GPS не более 5 секунд
+            );
+        } else {
+            // Если браузер вообще не поддерживает GPS
+            getAndShow(55.75, 37.61, "Москва");
         }
     }
 
