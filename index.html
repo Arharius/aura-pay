@@ -7,64 +7,44 @@
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
         body {
-            background-color: #0f0c29;
-            background-image: linear-gradient(315deg, #0f0c29 0%, #302b63 74%, #24243e 100%);
-            color: white; font-family: -apple-system, sans-serif;
-            margin: 0; padding: 10px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box;
+            background: #0f0c29; color: white; font-family: -apple-system, sans-serif;
+            margin: 0; padding: 10px; display: flex; flex-direction: column; min-height: 100vh;
         }
-        .container { max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; flex-grow: 1; }
-        h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
-        
-        /* ЗАГЛУШКА ДЛЯ МОДЕРАТОРА */
+        /* ЗАГЛУШКА ВИДИМА ПО УМОЛЧАНИЮ ДЛЯ МОДЕРАЦИИ */
         #offline-screen {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f0c29; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0c29; z-index: 10000; flex-direction: column; align-items: center; 
+            justify-content: center; text-align: center;
         }
-
-        /* ИСПРАВЛЕННЫЙ ТЕКСТОВЫЙ ВИДЖЕТ */
-        .weather-banner {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.2);
-            border-radius: 15px; padding: 12px; margin: 10px 0; text-align: center; font-size: 14px;
-        }
-
-        #chat-container {
-            flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
-            padding: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.2); border-radius: 20px;
-        }
+        .container { display: none; max-width: 600px; margin: 0 auto; width: 100%; flex-grow: 1; flex-direction: column; }
+        .weather-banner { background: rgba(255,255,255,0.05); border: 1px solid rgba(0,210,255,0.2); border-radius: 15px; padding: 12px; margin: 10px 0; text-align: center; font-size: 14px; }
+        #chat-container { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 20px; }
         .msg { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.5; }
-        .msg-user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); }
         .msg-ai { align-self: flex-start; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); }
-
-        .input-area { background: rgba(255,255,255,0.08); border-radius: 22px; padding: 15px; margin-bottom: 15px; }
-        textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; outline: none; min-height: 44px; }
-        .btn-send { background: #9733ee; color: white; border: none; padding: 10px 22px; border-radius: 14px; font-weight: bold; cursor: pointer; }
-
-        .pricing-card {
-            background: linear-gradient(135deg, rgba(151, 51, 238, 0.1), rgba(218, 34, 255, 0.1));
-            border: 1px solid rgba(218, 34, 255, 0.3); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px;
-        }
-
-        footer { padding: 15px; font-size: 10px; color: #8a8d91; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
+        .msg-user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); }
+        .input-area { background: rgba(255,255,255,0.08); border-radius: 22px; padding: 15px; margin: 15px 0; }
+        textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; outline: none; resize: none; min-height: 44px; }
+        .btn { background: #9733ee; color: white; border: none; padding: 10px 22px; border-radius: 14px; font-weight: bold; cursor: pointer; }
+        .pricing { background: rgba(151,51,238,0.1); border: 1px solid #9733ee; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px; }
+        footer { padding: 15px; font-size: 10px; color: #8a8d91; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="offline-screen">
     <div style="font-size: 80px; margin-bottom: 20px;">📡</div>
-    <h2 style="color: #ff4b2b; margin: 0 0 10px;">СВЯЗЬ ПОТЕРЯНА</h2>
-    <p style="color: #fff; padding: 0 40px; margin-bottom: 25px;">Aura AI не может работать без интернета. Пожалуйста, проверьте подключение к сети.</p>
-    <button class="btn-send" onclick="location.reload()">ОБНОВИТЬ СТРАНИЦУ</button>
+    <h2 style="color: #00d2ff; margin: 0 0 10px;">НЕТ СВЯЗИ</h2>
+    <p style="color: #aab2bd; padding: 0 40px;">Приложению Aura AI требуется интернет. Проверьте соединение и попробуйте снова.</p>
+    <button class="btn" onclick="location.reload()" style="margin-top: 20px;">ПОВТОРИТЬ ПОПЫТКУ</button>
 </div>
 
-<div class="container">
+<div class="container" id="app-content">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h1>Aura AI</h1>
+        <h1 style="background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Aura AI</h1>
         <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:11px; cursor:pointer;">ОЧИСТИТЬ</button>
     </div>
-
-    <div class="weather-banner">
-        <div id="weather-text">🌍 Определение погоды...</div>
-    </div>
+    
+    <div class="weather-banner" id="weather-text">📍 Определение погоды...</div>
 
     <div id="chat-container"></div>
 
@@ -72,62 +52,62 @@
         <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
         <textarea id="user-input" placeholder="Введите ваш запрос..."></textarea>
         <div style="display:flex; justify-content:right; margin-top:10px;">
-            <button class="btn-send" onclick="sendToAI()">Отправить</button>
+            <button class="btn" onclick="sendToAI()">Отправить</button>
         </div>
     </div>
 
-    <div class="pricing-card" id="pricing">
-        <h3 style="margin:0; font-size:16px;">Тариф Aura Pro</h3>
-        <div style="font-size:24px; font-weight:900; color:#da22ff; margin:5px 0;">990 ₽ / мес</div>
-        <button class="btn-send" style="width:100%;" onclick="alert('Платежи Aura Pay активируются банком. Доступ появится автоматически.')">Активировать</button>
+    <div class="pricing" id="pricing">
+        <h3 style="margin:0;">Тариф Aura Pro</h3>
+        <p style="color:#da22ff; font-weight:bold; font-size: 20px; margin: 10px 0;">990 ₽ / мес</p>
+        <button class="btn" style="width:100%" onclick="initPayment()">Активировать</button>
     </div>
 
     <footer>
         ИП Шкуренко Андрей Александрович | ИНН: 614550465916 <br>
-        <a href="/privacy.html" style="color:#da22ff; text-decoration: none;">Оферта и политика</a>
+        <a href="/privacy.html" style="color:#da22ff; text-decoration: none;">Оферта и политика конфиденциальности</a>
     </footer>
 </div>
 
+<div id="payment-form"></div>
+
 <script>
-    // КОНФИГУРАЦИЯ
-    const SUPABASE_URL = 'https://moqcrppxzfajqyifyhjq.supabase.co'; 
-    const SUPABASE_KEY = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_'; 
+    // === КОНФИГУРАЦИЯ (ВСТАВЬ СВОИ КЛЮЧИ ТУТ) ===
+    const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; //
+    const SUPABASE_KEY = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_'; //
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
+    const YOOKASSA_TOKEN = ''; 
+    // ============================================
 
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('aura_user_id', userId);
-
-    let currentRole = 'Общий помощник';
-    let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
     let messageCount = parseInt(localStorage.getItem('aura_count') || '0');
+    let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
     let isPro = false;
 
-    // 1. АГРЕССИВНАЯ ПРОВЕРКА СЕТИ (каждые 0.5 сек)
-    function forceCheckNetwork() {
-        const screen = document.getElementById('offline-screen');
-        const inputBlock = document.getElementById('input-block');
-        if (!navigator.onLine) {
-            screen.style.display = 'flex';
-            inputBlock.style.opacity = '0.3';
-            inputBlock.style.pointerEvents = 'none';
+    // ПРОВЕРКА СЕТИ (Инвертированная логика для модератора)
+    function checkNetwork() {
+        const offline = document.getElementById('offline-screen');
+        const content = document.getElementById('app-content');
+        if (navigator.onLine) {
+            offline.style.display = 'none';
+            content.style.display = 'flex';
         } else {
-            screen.style.display = 'none';
-            inputBlock.style.opacity = '1';
-            inputBlock.style.pointerEvents = 'auto';
+            offline.style.display = 'flex';
+            content.style.display = 'none';
         }
     }
-    setInterval(forceCheckNetwork, 500);
 
-    // 2. ЗАГРУЗКА ПОГОДЫ ТЕКСТОМ
+    // ПОСТОЯННЫЙ МОНИТОРИНГ
+    setInterval(checkNetwork, 1000);
+
     async function updateWeather() {
         try {
             const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true');
             const data = await res.json();
-            document.getElementById('weather-text').innerText = `📍 Москва: ${Math.round(data.current_weather.temperature)}°C. Хорошее время для общения с ИИ!`;
+            document.getElementById('weather-text').innerText = `📍 Москва: ${Math.round(data.current_weather.temperature)}°C. Отличное время для чата!`;
         } catch(e) { document.getElementById('weather-text').innerText = "📍 Погода временно недоступна"; }
     }
 
-    // 3. ПРОВЕРКА PRO СТАТУСА В SUPABASE
     async function checkProStatus() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${userId}&status=eq.success`, {
@@ -139,15 +119,13 @@
                 document.getElementById('pricing').style.display = 'none';
                 document.getElementById('role-display').innerText += ' (PRO)';
             }
-        } catch (e) { console.log("Status check skipped"); }
+        } catch (e) { console.log("DB check skip"); }
     }
-
-    window.onload = () => { renderHistory(); updateWeather(); checkProStatus(); console.log("ID:", userId); };
 
     function renderHistory() {
         const container = document.getElementById('chat-container');
         if (history.length === 0) {
-            container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI — твой персональный ассистент. Чем могу помочь сегодня?</div>';
+            container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Готова помочь с любым вопросом. О чем поговорим?</div>';
         } else {
             container.innerHTML = history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('');
         }
@@ -159,10 +137,10 @@
         const text = input.value.trim();
         if (!text || !navigator.onLine) return;
 
-        // ЛИМИТ 3 СООБЩЕНИЯ
-        if (messageCount >= 3 && !isPro) { 
-            alert("Бесплатный лимит (3 сообщения) исчерпан. Пожалуйста, активируйте тариф Pro.");
-            return; 
+        // ЛИМИТ СООБЩЕНИЙ
+        if (messageCount >= 3 && !isPro) {
+            alert("Лимит 3 бесплатных сообщения исчерпан. Пожалуйста, активируйте Aura Pro.");
+            return;
         }
 
         history.push({role: 'user', text: text});
@@ -175,23 +153,31 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat", 
-                    messages: [
-                        {role: "system", content: "Ты Aura AI. Ты лаконичный ассистент. Если спрашивают про погоду — она указана в виджете в Москве."}, 
-                        {role: "user", content: text}
-                    ]
+                    messages: [{role: "system", content: "Ты Aura AI. Ты лаконичный ассистент. Знаешь погоду в Москве (она в виджете)."}, {role: "user", content: text}]
                 })
             });
             const data = await res.json();
             history.push({role: 'ai', text: data.choices[0].message.content});
-            messageCount++; //
-            localStorage.setItem('aura_count', messageCount); //
+            messageCount++;
+            localStorage.setItem('aura_count', messageCount);
             localStorage.setItem('aura_history', JSON.stringify(history));
             renderHistory();
-        } catch (e) { alert("Ошибка связи. Проверьте настройки API."); }
+        } catch (e) { alert("Ошибка API. Проверьте ключи и интернет."); }
         input.value = "";
     }
 
+    function initPayment() {
+        alert("Модуль оплаты Aura Pay активируется банком. Пожалуйста, попробуйте совершить покупку позже.");
+    }
+
     function clearHistory() { if(confirm("Очистить историю?")) { localStorage.clear(); location.reload(); } }
+
+    window.onload = () => {
+        checkNetwork();
+        renderHistory();
+        updateWeather();
+        checkProStatus();
+    };
 </script>
 </body>
 </html>
