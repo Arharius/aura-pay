@@ -38,7 +38,6 @@
         textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; outline: none; min-height: 44px; }
         .btn-send { background: #9733ee; color: white; border: none; padding: 10px 22px; border-radius: 14px; font-weight: bold; cursor: pointer; }
         
-        /* Стили для кнопки загрузки */
         .btn-send:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .pricing-card {
@@ -91,10 +90,13 @@
 </div>
 
 <script>
-    // === ВСТАВЬ СВОИ КЛЮЧИ ТУТ ===
+    // === ВСТАВЬ СВОИ ДАННЫЕ ТУТ ===
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
+    
+    // ВСТАВЬ СЮДА ССЫЛКУ, КОТОРУЮ СКОПИРУЕШЬ В ЮКАССЕ (Многоразовый счет)
+    const PAYMENT_LINK = 'https://yookassa.ru/my/i/aZHd_rui8F2g/l'; 
     // =============================
 
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
@@ -185,44 +187,17 @@
         input.value = "";
     }
 
-    // === ФУНКЦИЯ ОПЛАТЫ ЧЕРЕЗ ТВОЙ SUPABASE ===
-    async function initPayment() {
+    // === ФУНКЦИЯ ОПЛАТЫ (ПРЯМАЯ ССЫЛКА) ===
+    function initPayment() {
         const btn = document.querySelector('#pricing button');
-        const originalText = btn.innerText;
-        btn.innerText = "Загрузка...";
-        btn.disabled = true;
-
-        try {
-            // Обращаемся к твоей Edge-функции (ссылка, которую ты дал)
-            const res = await fetch('https://tgumghgowexcuzlnqnoa.supabase.co/functions/v1/ookassa-pay', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + SUPABASE_KEY // Нужен ключ Supabase
-                },
-                body: JSON.stringify({ 
-                    userId: userId, 
-                    amount: '990.00' 
-                })
-            });
-
-            if (!res.ok) throw new Error('Ошибка сервера');
-
-            const data = await res.json();
-
-            // Если пришла ссылка на оплату — открываем её
-            if (data.confirmation && data.confirmation.confirmation_url) {
-                window.location.href = data.confirmation.confirmation_url;
-            } else {
-                alert("Не удалось создать платеж. Проверьте ключи в Edge Function.");
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        } catch (e) {
-            alert("Ошибка соединения. Проверьте консоль.");
-            console.error(e);
-            btn.innerText = originalText;
-            btn.disabled = false;
+        btn.innerText = "Переходим к оплате...";
+        
+        // Проверяем, вставил ли ты ссылку
+        if (PAYMENT_LINK.includes('http')) {
+             window.location.href = PAYMENT_LINK;
+        } else {
+            alert("Ссылка на оплату еще не добавлена в код.");
+            btn.innerText = "Активировать PRO";
         }
     }
 
