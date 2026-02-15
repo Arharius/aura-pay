@@ -70,7 +70,7 @@
 
     <div class="input-area" id="input-block">
         <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
-        <textarea id="user-input" placeholder="Спроси: Погода в Дубае?"></textarea>
+        <textarea id="user-input" placeholder="Введите запрос..."></textarea>
         <div style="display:flex; justify-content:right; margin-top:10px;">
             <button class="btn-send" onclick="sendToAI()">Отправить</button>
         </div>
@@ -86,12 +86,12 @@
 </div>
 
 <script>
-    // === ВСТАВЬ КЛЮЧИ СЮДА ===
+    // === ВСТАВЬ КЛЮЧИ ===
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
     const PAYMENT_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
-    // ==========================
+    // ====================
 
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('aura_user_id', userId);
@@ -105,7 +105,7 @@
             document.getElementById('offline-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'flex';
             if (!weatherLoaded) {
-                getLocationAndWeather(); 
+                getLocationAndWeather();
                 checkProStatus();
                 weatherLoaded = true;
             }
@@ -120,12 +120,12 @@
 
     window.addEventListener('online', checkNetworkAuto);
 
-    // === 1. ГЕОЛОКАЦИЯ (Твоя текущая погода) ===
+    // 1. ЛОКАЛЬНАЯ ПОГОДА (GPS)
     function getLocationAndWeather() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async (position) => {
                 fetchLocalWeather(position.coords.latitude, position.coords.longitude);
-            }, () => fetchLocalWeather(55.75, 37.61)); // Если отказ - Москва
+            }, () => fetchLocalWeather(55.75, 37.61)); // Москва по умолчанию
         } else {
             fetchLocalWeather(55.75, 37.61);
         }
@@ -141,35 +141,37 @@
         }
     }
 
-    // === 2. ПОИСК ПОГОДЫ В ЛЮБОМ ГОРОДЕ ===
+    // 2. УМНЫЙ ПОИСК ПОГОДЫ (ПО ВСЕМУ МИРУ)
     async function searchWorldWeather(text) {
-        // Ищем фразы типа "погода в [Город]" или "температура в [Город]"
-        const match = text.match(/(?:погода|температура)\s+(?:в|во)\s+([а-яА-Яa-zA-Z-]+)/i);
+        // Улучшенный поиск: ищем "погода в ..." и берем всё, что после
+        const match = text.match(/(?:погода|температура)\s+(?:в|во)\s+([а-яА-Яa-zA-Z-\s]+)/i);
         
         if (match && match[1]) {
-            const city = match[1];
+            const cityQuery = match[1].trim();
+            console.log("Ищем город:", cityQuery);
+            
             try {
-                // 1. Ищем координаты города
-                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=ru&format=json`);
+                // Используем Nominatim (OpenStreetMap) - он понимает падежи!
+                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityQuery)}&format=json&limit=1`);
                 const geoData = await geoRes.json();
                 
-                if (geoData.results && geoData.results.length > 0) {
-                    const { latitude, longitude, name, country } = geoData.results[0];
+                if (geoData && geoData.length > 0) {
+                    const { lat, lon, display_name } = geoData[0];
                     
-                    // 2. Узнаем погоду там
-                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                    // Скачиваем погоду по найденным координатам
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                     const weatherData = await weatherRes.json();
                     
-                    return `Пользователь спросил про город ${name} (${country}). Там сейчас: ${weatherData.current_weather.temperature}°C, ветер ${weatherData.current_weather.windspeed} км/ч.`;
+                    return `(СИСТЕМНОЕ СООБЩЕНИЕ: Пользователь спросил про ${display_name}. Температура там сейчас: ${weatherData.current_weather.temperature}°C, ветер ${weatherData.current_weather.windspeed} км/ч).`;
                 }
             } catch (e) {
                 console.log("Ошибка поиска города");
             }
         }
-        return ""; // Если города нет в тексте
+        return "";
     }
 
-    // === ОСТАЛЬНОЙ КОД ===
+    // ОСТАЛЬНОЙ ФУНКЦИОНАЛ
     async function checkProStatus() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${userId}&status=eq.success`, {
@@ -186,7 +188,7 @@
 
     function renderHistory() {
         const container = document.getElementById('chat-container');
-        if (history.length === 0) container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Могу сказать погоду в любом городе!</div>';
+        if (history.length === 0) container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Спроси меня про погоду в любом городе!</div>';
         else container.innerHTML = history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('');
         container.scrollTop = container.scrollHeight;
     }
@@ -206,18 +208,21 @@
         renderHistory();
         input.value = "...";
 
-        // 1. Получаем локальную погоду (с верхней плашки)
+        // 1. Берем погоду юзера
         const localW = document.getElementById('weather-text').innerText;
         
-        // 2. Проверяем, не спросил ли юзер про другой город (МАГИЯ!)
+        // 2. Ищем город в тексте сообщения (Магия с Nominatim)
         const cityWeatherInfo = await searchWorldWeather(text);
 
-        // 3. Собираем инструкцию для бота
-        let systemMsg = `Ты Aura AI. Твоя локальная погода (где ты сейчас): "${localW}".`;
+        // 3. Формируем инструкцию
+        let systemMsg = `Ты Aura AI. Твоя локальная погода: "${localW}".`;
+        
         if (cityWeatherInfo) {
-            systemMsg += ` ВАЖНО: ${cityWeatherInfo} Используй эти данные для ответа!`;
+            // Если мы нашли погоду в другом городе - передаем её боту
+            systemMsg += ` ${cityWeatherInfo} Ответь пользователю, используя эти данные о погоде.`;
         } else {
-            systemMsg += " Если спросят про погоду в другом городе, скажи 'Я сейчас проверяю...' но если я не передал данные, скажи что не нашел город.";
+            // Если не нашли
+            systemMsg += " Если спросят про погоду в другом городе и я не передал данные, скажи, что не смог найти этот город.";
         }
 
         try {
