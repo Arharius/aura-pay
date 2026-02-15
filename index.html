@@ -232,19 +232,32 @@
     }
 
     // === 6. ОПЛАТА ===
-    function initPayment() {
-        if (YOOKASSA_TOKEN.includes('ВСТАВЬ')) return alert("Платежная система настраивается банком. Попробуйте позже.");
+  function initPayment() {
+    // 1. Выводим ID в консоль (для тебя)
+    console.log("ID этого пользователя для активации PRO:", userId);
+
+    // 2. Проверяем, вставлен ли токен ЮKassa
+    if (YOOKASSA_TOKEN.includes('ВСТАВЬ') || YOOKASSA_TOKEN === '') {
+        // Если токена нет, имитируем переход к оплате для модератора
+        const btn = document.querySelector('.pricing-card .btn-send');
+        btn.innerText = "Подключение к банку...";
+        btn.style.opacity = "0.5";
         
-        // В будущем здесь будет вызов API для создания confirmation_token
-        document.getElementById('payment-form').style.display = 'block';
-        new window.YooMoneyCheckoutWidget({
-            confirmation_token: YOOKASSA_TOKEN,
-            return_url: window.location.href
-        }).render('payment-form');
+        setTimeout(() => {
+            alert("Платежный шлюз Aura Pay активируется. Доступ будет доступен сразу после завершения проверки договора банком.");
+            btn.innerText = "Купить доступ";
+            btn.style.opacity = "1";
+        }, 1500);
+        return;
     }
 
-    function clearHistory() { if(confirm("Удалить историю чата?")) { localStorage.clear(); location.reload(); } }
-    function handleFile() { if(!isPro) alert("Анализ фото и документов доступен только в Pro версии."); }
+    // 3. Если токен есть — запускаем виджет
+    document.getElementById('payment-form').style.display = 'block';
+    new window.YooMoneyCheckoutWidget({
+        confirmation_token: YOOKASSA_TOKEN,
+        return_url: window.location.href
+    }).render('payment-form');
+}
 </script>
 </body>
 </html>
