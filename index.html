@@ -155,12 +155,33 @@
 
     function quickTask(p) { showScreen('chat'); document.getElementById('user-msg').value = p; }
 
-    async function updateWeather() {
+    aasync function updateWeather() {
+        const weatherEl = document.getElementById('weather');
         try {
-            const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true');
-            const d = await r.json();
-            document.getElementById('weather').innerText = `Москва: ${Math.round(d.current_weather.temperature)}°C`;
-        } catch(e) {}
+            // Запрашиваем текущую погоду для Ростова-на-Дону (47.23, 39.72)
+            // current_weather=true гарантирует, что мы берем данные "сейчас", а не прогноз
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=47.23&longitude=39.72&current_weather=true&timezone=auto');
+            const data = await res.json();
+            
+            if (data && data.current_weather) {
+                const temp = Math.round(data.current_weather.temperature);
+                
+                // Берем реальную дату с телефона пользователя
+                const now = new Date();
+                const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+                const day = now.getDate();
+                const month = months[now.getMonth()];
+                
+                // Итоговая строка: Город, Градусы и сегодняшнее число
+                weatherEl.innerText = `Ростов: ${temp}°C (${day} ${month})`;
+                console.log("Погода в Ростове успешно обновлена на сегодня");
+            }
+        } catch (e) {
+            weatherEl.innerText = "Ростов: --°C";
+            console.log("Не удалось получить погоду, попробую позже");
+            // Если ошибка (например, сбой сети), пробуем еще раз через 10 секунд
+            setTimeout(updateWeather, 10000);
+        }
     }
 
     async function sendMessage() {
