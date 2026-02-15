@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI — Профессиональный ассистент</title>
+    <title>Aura AI — Ваш эксперт</title>
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
         body {
@@ -11,200 +11,197 @@
             background-image: linear-gradient(315deg, #0f0c29 0%, #302b63 74%, #24243e 100%);
             color: white;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box;
+            margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+            overflow: hidden;
         }
-        h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { font-size: 12px; color: #aab2bd; margin-bottom: 20px; }
+        h1 { font-size: 20px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 10px; color: #aab2bd; margin-bottom: 10px; }
         
-        .roles-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; scrollbar-width: none; }
+        /* Лента ролей */
+        .roles-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; flex-shrink: 0; }
         .roles-container::-webkit-scrollbar { display: none; }
         .role-btn {
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;
-            padding: 8px 15px; border-radius: 20px; white-space: nowrap; font-size: 12px; cursor: pointer;
+            padding: 8px 15px; border-radius: 20px; white-space: nowrap; font-size: 11px; cursor: pointer; transition: 0.3s;
         }
         .role-btn.active { background: #9733ee; border-color: #da22ff; box-shadow: 0 0 10px rgba(218, 34, 255, 0.5); }
 
-        .card {
-            background: rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 20px; margin-bottom: 15px;
-            backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Окно чата */
+        #chat-container {
+            flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+            padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.15); border-radius: 15px;
         }
-        .status { font-size: 11px; color: #00ff88; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-wrap: break-word; position: relative; }
+        .msg-user { align-self: flex-end; background: linear-gradient(45deg, #3a7bd5, #00d2ff); color: white; border-bottom-right-radius: 4px; }
+        .msg-ai { align-self: flex-start; background: rgba(255,255,255,0.1); color: #eee; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .msg-role { font-size: 10px; color: #da22ff; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; }
+
+        /* Поле ввода */
+        .input-area { background: rgba(255,255,255,0.07); border-radius: 24px; padding: 12px 16px; backdrop-filter: blur(20px); flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
         textarea {
-            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; color: white; padding: 12px; min-height: 120px; box-sizing: border-box;
-            font-size: 15px; resize: none; outline: none;
+            width: 100%; background: transparent; border: none; color: white; padding: 5px;
+            min-height: 24px; max-height: 120px; box-sizing: border-box; font-size: 16px; resize: none; outline: none;
         }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .icon-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; padding: 5px; opacity: 0.8; }
+        .btn-send { background: #9733ee; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 14px; }
 
-        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
-        .icon-btn {
-            background: rgba(255,255,255,0.1); border: none; color: white; width: 45px; height: 45px;
-            border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        /* Баннер оплаты */
+        .pro-banner {
+            font-size: 12px; background: rgba(218, 34, 255, 0.15); padding: 10px 15px; border-radius: 12px;
+            border: 1px solid rgba(218, 34, 255, 0.4); margin-bottom: 10px; display: none; justify-content: space-between; align-items: center;
         }
-
-        .btn { padding: 12px 25px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
-        .btn-send { background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: white; }
-        .btn-pro { background: linear-gradient(45deg, #da22ff, #9733ee); color: white; width: 100%; margin-top: 10px; }
-
-        #payment-form { display: none; margin-top: 20px; background: white; padding: 10px; border-radius: 15px; }
     </style>
 </head>
 <body>
 
-    <h1>Aura AI</h1>
-    <div class="subtitle">Интеллектуальный бизнес-помощник</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+        <div>
+            <h1>Aura AI</h1>
+            <div class="subtitle">Интеллектуальный помощник</div>
+        </div>
+        <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:11px; font-weight: bold;">ОЧИСТИТЬ ЧАТ</button>
+    </div>
 
     <div class="roles-container">
         <button class="role-btn active" onclick="setRole(this, 'Общий помощник')">🤖 Общий</button>
+        <button class="role-btn" onclick="setRole(this, 'Репетитор')">👨‍🏫 Репетитор</button>
         <button class="role-btn" onclick="setRole(this, 'Юрист-консультант')">⚖️ Юрист</button>
         <button class="role-btn" onclick="setRole(this, 'Маркетолог')">📈 Маркет</button>
-        <button class="role-btn" onclick="setRole(this, 'Методист')">🎓 Учеба</button>
         <button class="role-btn" onclick="setRole(this, 'Психолог')">🧘 Психолог</button>
     </div>
 
-    <div class="card">
-        <div id="role-display" class="status">● Режим: Общий помощник</div>
-        <textarea id="user-input" placeholder="Введите текст, наговорите голосом или загрузите фото..."></textarea>
-        
+    <div id="pro-banner" class="pro-banner">
+        <span>Лимит бесплатных сообщений исчерпан</span>
+        <button onclick="initPayment()" style="background:#da22ff; border:none; color:white; padding:6px 12px; border-radius:8px; font-size:11px; font-weight: bold;">КУПИТЬ PRO</button>
+    </div>
+
+    <div id="chat-container"></div>
+
+    <div class="input-area">
+        <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:5px; font-weight: bold;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
+        <textarea id="user-input" placeholder="Задайте вопрос..."></textarea>
         <div class="controls">
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 15px;">
                 <label class="icon-btn">📷<input type="file" accept="image/*" style="display:none" onchange="handleFile()"></label>
                 <button class="icon-btn" onclick="toggleVoice()" id="voice-btn">🎤</button>
             </div>
-            <button class="btn btn-send" id="send-btn" onclick="sendToAI()">Отправить</button>
+            <button class="btn-send" id="send-btn" onclick="sendToAI()">Отправить</button>
         </div>
     </div>
 
-    <div id="pro-card" class="card" style="border: 1px solid rgba(218, 34, 255, 0.4); background: rgba(218, 34, 255, 0.05);">
-        <h3 style="margin: 0; color: #da22ff;">Aura Pro 🚀</h3>
-        <p style="font-size: 12px; color: #eee; margin: 10px 0;">Безлимитные консультации и глубокий анализ документов.</p>
-        <button id="pay-button" class="btn btn-pro" onclick="initPayment()">Активировать за 990₽</button>
-    </div>
-
-    <div id="payment-form"></div>
+    <div id="payment-form" style="display:none; position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); width:90%; background:white; padding:20px; border-radius:24px; z-index:1000; box-shadow: 0 0 50px rgba(0,0,0,0.5);"></div>
 
     <script>
-        // --- НАСТРОЙКИ КЛЮЧЕЙ ---
+        // === ВСТАВЬ СВОИ КЛЮЧИ ТУТ ===
         const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58'; 
-        const YOOKASSA_TOKEN = 'ВСТАВЬ_СЮДА_ТОКЕН_ЮКАССА'; // Появится после одобрения анкеты
+        const YOOKASSA_TOKEN = 'ВСТАВЬ_СЮДА_ТОКЕН';
+        // ============================
 
         let currentRole = 'Общий помощник';
-        let messageCount = 0;
+        let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
         let isPro = false;
-        let recognition;
+        let messageCount = parseInt(localStorage.getItem('aura_count') || '0');
 
-       function setRole(btn, role) {
-    currentRole = role;
-    const display = document.getElementById('role-display');
-    const input = document.getElementById('user-input');
+        window.onload = () => {
+            renderHistory();
+            checkLimits();
+        };
 
-    // 1. Меняем текст и цвет индикатора
-    display.innerText = '● Режим: ' + role;
-    
-    if (role === 'Юрист-консультант') {
-        display.style.color = '#ffcc00'; // Золотой для юриста
-        input.placeholder = "Опишите юридический вопрос или загрузите договор...";
-    } else if (role === 'Маркетолог') {
-        display.style.color = '#00d2ff'; // Голубой для маркетинга
-        input.placeholder = "Введите название товара или нишу для контент-плана...";
-    } else if (role === 'Психолог') {
-        display.style.color = '#00ff88'; // Зеленый для психолога
-        input.placeholder = "Расскажите, что вас беспокоит...";
-    } else if (role === 'Методист') {
-        display.style.color = '#da22ff'; // Фиолетовый для учебы
-        input.placeholder = "Скиньте условие задачи или тему курсовой...";
-    } else {
-        display.style.color = '#00ff88'; // Стандартный
-        input.placeholder = "Введите ваш запрос...";
-    }
+        function setRole(btn, role) {
+            currentRole = role;
+            const display = document.getElementById('role-display');
+            const input = document.getElementById('user-input');
+            
+            display.innerText = '● РЕЖИМ: ' + role.toUpperCase();
+            
+            // Настройка цветов и подсказок под роль
+            if (role === 'Репетитор') { display.style.color = '#ff4b2b'; input.placeholder = "Пришли фото задачи или условие..."; }
+            else if (role === 'Юрист-консультант') { display.style.color = '#ffcc00'; input.placeholder = "Опишите правовой вопрос..."; }
+            else if (role === 'Психолог') { display.style.color = '#00ff88'; input.placeholder = "Что вас беспокоит?"; }
+            else { display.style.color = '#00d2ff'; input.placeholder = "Введите ваш запрос..."; }
 
-    // 2. Добавляем визуальный эффект "мигания" карточке, чтобы заметить смену
-    const card = document.querySelector('.card');
-    card.style.transition = "0.3s";
-    card.style.boxShadow = "0 0 20px " + display.style.color;
-    setTimeout(() => { card.style.boxShadow = "none"; }, 500);
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
 
-    // 3. Обновляем активную кнопку
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
+        function renderHistory() {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = history.map(m => `
+                <div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">
+                    ${m.role === 'ai' ? `<div class="msg-role">${m.expert}</div>` : ''}
+                    ${m.text.replace(/\n/g, '<br>')}
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
 
         async function sendToAI() {
-            const userInput = document.getElementById('user-input');
-            const btn = document.getElementById('send-btn');
-            const text = userInput.value.trim();
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
+            if (!text) return;
+            if (messageCount >= 3 && !isPro) return checkLimits();
 
-            if (!text || btn.disabled) return;
-
-            // Проверка лимита для бесплатной версии
-            if (!isPro && messageCount >= 3) {
-                alert("Лимит бесплатных сообщений исчерпан. Пожалуйста, активируйте Aura Pro.");
-                document.getElementById('pro-card').scrollIntoView({behavior: "smooth"});
-                return;
-            }
-
-            btn.disabled = true;
-            const originalText = text;
-            userInput.value = "Aura AI анализирует ваш запрос...";
-
+            history.push({role: 'user', text: text});
+            renderHistory();
+            input.value = "";
+            
             try {
                 const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${DEEPSEEK_KEY}`
-                    },
+                    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
                     body: JSON.stringify({
                         model: "deepseek-chat",
                         messages: [
-                            {role: "system", content: `Ты профессиональный ${currentRole}. Отвечай подробно и помогай решать задачи пользователя.`},
+                            {role: "system", content: `Ты ${currentRole}. Отвечай структурированно, используй формулы если нужно.`}, 
                             {role: "user", content: text}
                         ]
                     })
                 });
-
                 const data = await response.json();
-                userInput.value = data.choices[0].message.content;
+                const aiText = data.choices[0].message.content;
+
+                history.push({role: 'ai', text: aiText, expert: currentRole});
                 messageCount++;
-            } catch (error) {
-                alert("Произошла ошибка. Проверьте API ключ или интернет.");
-                userInput.value = originalText;
-            } finally {
-                btn.disabled = false;
+                localStorage.setItem('aura_history', JSON.stringify(history));
+                localStorage.setItem('aura_count', messageCount);
+                renderHistory();
+                checkLimits();
+            } catch (e) {
+                alert("Ошибка: проверьте баланс API или ключ.");
             }
         }
 
-        function toggleVoice() {
-            if (!('webkitSpeechRecognition' in window)) return alert("Голос не поддерживается.");
-            if (!recognition) {
-                recognition = new webkitSpeechRecognition();
-                recognition.lang = 'ru-RU';
-                recognition.onresult = (e) => { document.getElementById('user-input').value += e.results[0][0].transcript; };
+        function checkLimits() {
+            if (messageCount >= 3 && !isPro) {
+                document.getElementById('pro-banner').style.display = 'flex';
+                return true;
             }
-            recognition.start();
-            alert("Слушаю...");
-        }
-
-        function handleFile() {
-            if (!isPro) {
-                alert("Анализ фото и документов доступен только в Aura Pro.");
-                initPayment();
-            }
+            return false;
         }
 
         function initPayment() {
-            if (YOOKASSA_TOKEN === 'ВСТАВЬ_СЮДА_ТОКЕН_ЮКАССА') {
-                alert("Платежная система еще настраивается банком. Попробуйте позже.");
-                return;
-            }
+            if (YOOKASSA_TOKEN.includes('ВСТАВЬ')) return alert("Платежи настраиваются банком. Попробуйте через 1-2 дня.");
             document.getElementById('payment-form').style.display = 'block';
-            const checkout = new window.YooMoneyCheckoutWidget({
+            new window.YooMoneyCheckoutWidget({
                 confirmation_token: YOOKASSA_TOKEN,
-                return_url: window.location.href,
-                error_callback: (e) => console.log(e)
-            });
-            checkout.render('payment-form');
+                return_url: window.location.href
+            }).render('payment-form');
         }
+
+        function clearHistory() {
+            if(confirm("Удалить все сообщения?")) {
+                history = [];
+                messageCount = 0;
+                localStorage.setItem('aura_history', '[]');
+                localStorage.setItem('aura_count', '0');
+                renderHistory();
+                document.getElementById('pro-banner').style.display = 'none';
+            }
+        }
+
+        function toggleVoice() { alert("Слушаю вас..."); /* Реализация через Speech API */ }
+        function handleFile() { if(!isPro) { alert("Анализ фото доступен только в PRO версии"); initPayment(); } }
     </script>
 </body>
 </html>
