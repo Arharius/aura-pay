@@ -34,11 +34,11 @@
         .msg-ai { align-self: flex-start; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); }
 
         /* Ввод */
-        .input-area { background: rgba(255,255,255,0.07); border-radius: 20px; padding: 15px; margin-bottom: 20px; }
+        .input-area { background: rgba(255,255,255,0.07); border-radius: 20px; padding: 15px; margin-bottom: 20px; transition: 0.3s; }
         textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; outline: none; min-height: 40px; }
         .btn-send { background: #9733ee; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        /* Тарифы для ЮKassa */
+        /* Тарифы */
         .pricing-card {
             background: rgba(218, 34, 255, 0.1); border: 1px solid rgba(218, 34, 255, 0.4);
             border-radius: 20px; padding: 20px; margin-bottom: 30px; text-align: center;
@@ -53,7 +53,7 @@
         footer h4 { color: white; margin-bottom: 8px; font-size: 14px; }
         footer a { color: #da22ff; text-decoration: none; }
 
-        #payment-form { display: none; position: fixed; top: 10%; left: 5%; width: 90%; background: white; padding: 20px; border-radius: 20px; z-index: 100; }
+        #offline-notice { display: none; background: #ff4b2b; color: white; text-align: center; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -63,7 +63,9 @@
         <h1>Aura AI</h1>
         <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:10px; cursor:pointer;">ОЧИСТИТЬ</button>
     </div>
-    <p class="subtitle">Ваш персональный эксперт на базе искусственного интеллекта</p>
+    <p class="subtitle">Ваш персональный помощник на базе нейросетей</p>
+
+    <div id="offline-notice">⚠️ Нет подключения к интернету. Чат временно недоступен.</div>
 
     <div class="roles-container">
         <button class="role-btn active" onclick="setRole(this, 'Общий помощник')">🤖 Общий</button>
@@ -74,7 +76,7 @@
 
     <div id="chat-container"></div>
 
-    <div class="input-area">
+    <div class="input-area" id="input-block">
         <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:5px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
         <textarea id="user-input" placeholder="Введите ваш вопрос..."></textarea>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
@@ -87,41 +89,49 @@
         <h3 style="margin:0;">Тариф "Aura Pro"</h3>
         <p style="font-size:13px; opacity:0.8;">Безлимитные консультации, анализ документов и фото-задач</p>
         <div class="price-tag">990 ₽</div>
-        <p style="font-size:11px;">Доступ предоставляется на 30 дней. Активация мгновенно.</p>
+        <p style="font-size:11px;">Доступ на 30 дней. Активация мгновенно после оплаты.</p>
         <button class="btn-send" style="width:100%;" onclick="initPayment()">Купить доступ</button>
     </div>
 
     <footer>
         <div style="margin-bottom: 20px;">
             <h4>Информация об оплате и доставке:</h4>
-            <p>● <b>Оплата:</b> Банковские карты (МИР, Visa, Mastercard) и СБП через сервис ЮKassa.</p>
-            <p>● <b>Доставка:</b> Цифровой товар. Доступ к функциям "Aura Pro" открывается автоматически в приложении сразу после подтверждения платежа.</p>
-            <p>● <b>Возврат:</b> По вопросам возврата и техподдержки пишите на электронную почту.</p>
+            <p>● Оплата: Карты МИР, Visa, Mastercard, СБП (ЮKassa).</p>
+            <p>● Доставка: Доступ активируется автоматически после платежа.</p>
+            <p>● Возврат: Пишите на Arharius@yandex.ru.</p>
         </div>
 
         <div>
             <h4>Контакты и реквизиты:</h4>
-            <p>ИП / Самозанятый: [Шкуренко Андрей Александрович]</p>
-            <p>ИНН: [ИНН 614550465916]</p>
-            <p>Email: [Arharius@yandex.ru]</p>
-            <p><a href="#">Пользовательское соглашение и оферта</a></p>
+            <p>ИП / Самозанятый: Шкуренко Андрей Александрович</p>
+            <p>ИНН: 614550465916</p>
+            <p>Email: Arharius@yandex.ru</p>
+            <p><a href="/privacy.html">Пользовательское соглашение и оферта</a></p>
         </div>
-        <p style="text-align:center; margin-top:20px; opacity:0.5;">© 2026 Aura AI</p>
+        <p style="text-align:center; margin-top:20px; opacity:0.3; font-size:9px;">© 2026 Aura AI. <a href="/privacy.html" style="color:inherit;">Правовая информация</a></p>
     </footer>
 </div>
 
-<div id="payment-form"></div>
+<div id="payment-form" style="display:none; position:fixed; top:10%; left:5%; width:90%; background:white; padding:20px; border-radius:20px; z-index:100;"></div>
 
 <script>
-    // === КОНФИГУРАЦИЯ ===
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58'; 
     const YOOKASSA_TOKEN = 'ВСТАВЬ_СЮДА_ТОКЕН';
-    // ===================
 
     let currentRole = 'Общий помощник';
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
     let messageCount = parseInt(localStorage.getItem('aura_count') || '0');
     let isPro = false;
+
+    // Мониторинг интернета для RuStore
+    window.addEventListener('offline', () => {
+        document.getElementById('offline-notice').style.display = 'block';
+        document.getElementById('input-block').style.opacity = '0.3';
+    });
+    window.addEventListener('online', () => {
+        document.getElementById('offline-notice').style.display = 'none';
+        document.getElementById('input-block').style.opacity = '1';
+    });
 
     window.onload = () => { renderHistory(); };
 
@@ -135,9 +145,7 @@
     function renderHistory() {
         const container = document.getElementById('chat-container');
         container.innerHTML = history.map(m => `
-            <div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">
-                ${m.text.replace(/\n/g, '<br>')}
-            </div>
+            <div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text.replace(/\n/g, '<br>')}</div>
         `).join('');
         container.scrollTop = container.scrollHeight;
     }
@@ -145,17 +153,17 @@
     async function sendToAI() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
-        if (!text) return;
+        if (!text || !navigator.onLine) return;
 
         if (messageCount >= 3 && !isPro) {
-            alert("Лимит сообщений исчерпан. Пожалуйста, приобретите Aura Pro ниже.");
+            alert("Лимит сообщений. Купите Aura Pro ниже.");
             document.getElementById('pricing').scrollIntoView({behavior: "smooth"});
             return;
         }
 
         history.push({role: 'user', text: text});
         renderHistory();
-        input.value = "Aura AI думает...";
+        input.value = "Думаю...";
 
         try {
             const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -167,54 +175,23 @@
                 })
             });
             const data = await response.json();
-            const aiText = data.choices[0].message.content;
-            
-            history[history.length-1].text = text; // Возвращаем текст юзера
-            history.push({role: 'ai', text: aiText});
+            history.push({role: 'ai', text: data.choices[0].message.content});
             messageCount++;
             localStorage.setItem('aura_history', JSON.stringify(history));
             localStorage.setItem('aura_count', messageCount);
             renderHistory();
-        } catch (e) {
-            alert("Ошибка сети. Проверьте ключ.");
-        }
+        } catch (e) { alert("Ошибка API."); }
         input.value = "";
     }
 
     function initPayment() {
-        if (YOOKASSA_TOKEN.includes('ВСТАВЬ')) {
-            alert("Платежная система в процессе подключения. Попробуйте позже.");
-            return;
-        }
+        if (YOOKASSA_TOKEN.includes('ВСТАВЬ')) return alert("Платежи подключаются ЮKassa.");
         document.getElementById('payment-form').style.display = 'block';
-        new window.YooMoneyCheckoutWidget({
-            confirmation_token: YOOKASSA_TOKEN,
-            return_url: window.location.href
-        }).render('payment-form');
+        new window.YooMoneyCheckoutWidget({ confirmation_token: YOOKASSA_TOKEN, return_url: window.location.href }).render('payment-form');
     }
 
     function clearHistory() { localStorage.clear(); location.reload(); }
-    function handleFile() { alert("Функция доступна в Aura Pro"); }
-</script>
-    <footer style="text-align: center; padding: 20px; opacity: 0.4; font-size: 10px;">
-    <a href="/privacy.html" style="color: white; text-decoration: none;">Правовая информация и оферта</a>
-</footer>
-    <script>
-// Проверка интернета каждые 5 секунд
-setInterval(function() {
-    if (!navigator.onLine) {
-        document.body.style.filter = "grayscale(1)";
-        document.getElementById('role-display').innerText = "⚠️ НЕТ ИНТЕРНЕТА";
-        document.getElementById('role-display').style.color = "red";
-    } else {
-        document.body.style.filter = "none";
-    }
-}, 5000);
-
-// Регистрация простого воркера для кэша
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('https://aura-ai-pay.vercel.app/sw.js');
-}
+    function handleFile() { if(!isPro) alert("Функция для Pro версии."); }
 </script>
 </body>
 </html>
