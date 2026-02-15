@@ -127,23 +127,23 @@
     let isPro = false;
 
     // ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА ИНТЕРНЕТА
-    function updateOnlineStatus() {
+   async function checkInternet() {
         const notice = document.getElementById('offline-notice');
         const input = document.getElementById('input-block');
-        if (!navigator.onLine) {
-            notice.style.display = 'block';
-            input.style.opacity = '0.3';
-            input.style.pointerEvents = 'none';
-        } else {
+        
+        // Пытаемся быстро пинговать гугл
+        try {
+            await fetch("https://www.google.com/favicon.ico", { mode: 'no-cors', cache: 'no-store' });
             notice.style.display = 'none';
             input.style.opacity = '1';
-            input.style.pointerEvents = 'auto';
+        } catch (e) {
+            notice.style.display = 'block';
+            input.style.opacity = '0.3';
         }
     }
 
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    setInterval(updateOnlineStatus, 2000); // Проверка каждые 2 секунды
+    // Проверяем каждые 3 секунды
+    setInterval(checkInternet, 3000);
 
     window.onload = () => { updateOnlineStatus(); renderHistory(); };
 
