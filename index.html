@@ -199,5 +199,22 @@
     <footer style="text-align: center; padding: 20px; opacity: 0.4; font-size: 10px;">
     <a href="/privacy.html" style="color: white; text-decoration: none;">Правовая информация и оферта</a>
 </footer>
+    <script>
+// Проверка интернета каждые 5 секунд
+setInterval(function() {
+    if (!navigator.onLine) {
+        document.body.style.filter = "grayscale(1)";
+        document.getElementById('role-display').innerText = "⚠️ НЕТ ИНТЕРНЕТА";
+        document.getElementById('role-display').style.color = "red";
+    } else {
+        document.body.style.filter = "none";
+    }
+}, 5000);
+
+// Регистрация простого воркера для кэша
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('https://aura-ai-pay.vercel.app/sw.js');
+}
+</script>
 </body>
 </html>
