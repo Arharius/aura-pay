@@ -3,38 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI</title>
+    <title>Aura AI — World Weather</title>
     <style>
         :root { --bg: #0f0c29; --accent: #00d2ff; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-
-        /* ЗАГЛУШКА - СКРЫТА ПО УМОЛЧАНИЮ */
-        #offline-screen { 
-            display: none; position: fixed; inset: 0; background: var(--bg); z-index: 10000; 
-            flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; 
-        }
-
+        #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .screen { flex-grow: 1; display: none; flex-direction: column; padding: 15px; padding-bottom: 75px; overflow-y: auto; }
         .active { display: flex; }
-
         header { padding: 15px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
         .weather-pill { background: rgba(0,210,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--accent); border: 1px solid var(--accent); }
-
         #chat-flow { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px 0; }
         .bubble { max-width: 85%; padding: 12px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
         .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); }
         .ai { align-self: flex-start; background: rgba(255,255,255,0.1); }
-
         .input-area { display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px; margin-top: 10px; }
         input { flex-grow: 1; background: transparent; border: none; color: white; outline: none; }
-        .btn-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; font-weight: bold; cursor: pointer; }
-
+        .btn-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; text-align: center; }
-        
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; }
         .promo { background: linear-gradient(135deg, #da22ff, #9733ee); padding: 20px; border-radius: 20px; text-align: center; margin-top: 15px; }
         .btn-buy { width: 100%; padding: 15px; border-radius: 12px; border: none; background: white; color: #9733ee; font-weight: 800; margin-top: 10px; }
-
         nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #161b33; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
         .nav-link { color: #666; text-align: center; font-size: 10px; cursor: pointer; text-decoration: none; }
         .nav-link.active { color: var(--accent); }
@@ -45,47 +33,44 @@
 <div id="offline-screen">
     <div style="font-size: 50px;">📡</div>
     <h2 style="color:#ff4b2b">Нет связи</h2>
-    <p>Проверьте интернет и попробуйте снова.</p>
     <button onclick="location.reload()" style="padding: 10px 20px; background: var(--accent); border: none; border-radius: 8px;">ОБНОВИТЬ</button>
 </div>
 
 <header>
     <h1 style="font-size: 18px;">AURA AI</h1>
-    <div id="weather" class="weather-pill">Ростов: --°C</div>
+    <div id="weather" class="weather-pill">Определяем...</div>
 </header>
 
 <div id="screen-chat" class="screen active">
     <div id="chat-flow">
-        <div class="bubble ai">Привет! Я Aura. Погода обновлена, я готов к работе.</div>
+        <div class="bubble ai">Привет! Я Aura. Спроси меня о погоде в любом городе мира.</div>
     </div>
     <div class="input-area">
-        <input type="text" id="user-msg" placeholder="Спроси меня о чем-нибудь...">
+        <input type="text" id="user-msg" placeholder="Погода в Токио?">
         <button class="btn-send" onclick="sendMessage()">➤</button>
     </div>
 </div>
 
 <div id="screen-tools" class="screen">
-    <h2 style="font-size: 18px;">Задачи</h2>
+    <h2>Задачи</h2>
     <div class="grid">
+        <div class="card" onclick="quickTask('Какая погода в ')"><i>🌡</i><br>Погода в мире</div>
         <div class="card" onclick="quickTask('Напиши пост: ')"><i>📝</i><br>Пост</div>
         <div class="card" onclick="quickTask('Переведи: ')"><i>🌍</i><br>Перевод</div>
         <div class="card" onclick="quickTask('Идеи подарка: ')"><i>🎁</i><br>Подарки</div>
-        <div class="card" onclick="quickTask('Исправь ошибки: ')"><i>✅</i><br>Ошибки</div>
     </div>
 </div>
 
 <div id="screen-profile" class="screen">
-    <h2 style="font-size: 18px;">Профиль</h2>
+    <h2>Профиль</h2>
     <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;">
         <div id="status-txt" style="font-weight: bold;">Подписка: Free</div>
     </div>
     <div id="pay-card" class="promo">
         <h3>AURA PRO</h3>
-        <p style="font-size: 12px;">Безлимит и умные ответы</p>
-        <div style="font-size: 20px; font-weight: 900;">990 ₽ / мес</div>
         <button class="btn-buy" onclick="openPay()">АКТИВИРОВАТЬ</button>
     </div>
-    <button onclick="localStorage.clear(); location.reload();" style="margin-top: 20px; width:100%; background:none; border:1px solid #444; color:#666; padding:10px; border-radius:10px;">Очистить данные</button>
+    <button onclick="localStorage.clear(); location.reload();" style="margin-top: 20px; width:100%; background:none; border:1px solid #444; color:#666; padding:10px; border-radius:10px;">Сбросить данные</button>
 </div>
 
 <nav>
@@ -95,50 +80,75 @@
 </nav>
 
 <script>
-    // === ВСТАВЬ СВОИ КЛЮЧИ! ===
+    // ВСТАВЬ КЛЮЧИ
     const S_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const S_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const D_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
-    const P_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U '; 
+    const P_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
 
     let uId = localStorage.getItem('aura_id') || ('u'+Math.random().toString(36).substr(2,7));
     localStorage.setItem('aura_id', uId);
     let mCount = parseInt(localStorage.getItem('aura_c') || '0');
     let isPro = false;
 
-    // ПЕРЕКЛЮЧЕНИЕ
     function show(name) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
         document.getElementById('screen-' + name).classList.add('active');
         document.getElementById('n-' + name).classList.add('active');
     }
+    function quickTask(p) { show('chat'); document.getElementById('user-msg').value = p; document.getElementById('user-msg').focus(); }
 
-    function quickTask(p) { show('chat'); document.getElementById('user-msg').value = p; }
-
-    // ПОГОДА (Для Ростова на 15 фев)
-    async function getW() {
-        try {
-            const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=47.23&longitude=39.72&current_weather=true');
-            const d = await r.json();
-            const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-            const now = new Date();
-            document.getElementById('weather').innerText = `Ростов: ${Math.round(d.current_weather.temperature)}°C (${now.getDate()} ${months[now.getMonth()]})`;
-        } catch(e) { document.getElementById('weather').innerText = "Ростов: --°C"; }
+    // === 1. ГЕОЛОКАЦИЯ (Верхняя плашка) ===
+    async function initWeather() {
+        const weatherEl = document.getElementById('weather');
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                // Узнаем название города по координатам
+                const geo = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                const geoData = await geo.json();
+                const city = geoData.address.city || geoData.address.town || "Локация";
+                
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                const d = await res.json();
+                weatherEl.innerText = `${city}: ${Math.round(d.current_weather.temperature)}°C`;
+            }, () => { weatherEl.innerText = "Москва: --°C"; });
+        }
     }
 
-    // ЧАТ
+    // === 2. ПОИСК ПОГОДЫ В ЛЮБОМ ГОРОДЕ (Для чата) ===
+    async function fetchWorldWeather(text) {
+        const match = text.match(/(?:погода|температура|что там)\s+(?:в|во)\s+([а-яА-Яa-zA-Z-\s]+)/i);
+        if (match && match[1]) {
+            const city = match[1].trim();
+            try {
+                const gRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`);
+                const gData = await gRes.json();
+                if (gData.length > 0) {
+                    const { lat, lon, display_name } = gData[0];
+                    const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                    const wData = await wRes.json();
+                    return `Данные: Погода в ${display_name} сейчас ${wData.current_weather.temperature}°C.`;
+                }
+            } catch(e) {}
+        }
+        return "";
+    }
+
     async function sendMessage() {
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
         if(!text) return;
-        if(mCount >= 3 && !isPro) { alert("Лимит!"); show('profile'); return; }
+        if(mCount >= 5 && !isPro) { alert("Лимит!"); show('profile'); return; }
 
         addB(text, 'user');
-        input.value = '...';
+        input.value = 'Смотрю...';
 
-        const weatherInfo = document.getElementById('weather').innerText;
-        const systemPrompt = `Ты Aura AI. Данные: ${weatherInfo}. Дата: 15.02.2026.`;
+        const localInfo = document.getElementById('weather').innerText;
+        const worldInfo = await fetchWorldWeather(text); // Ищем город в вопросе
+        
+        const systemPrompt = `Ты Aura AI. Сейчас 15.02.2026. Локально: ${localInfo}. ${worldInfo} Если данные о городе найдены, используй их. Если нет — скажи, что не нашел город.`;
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -165,41 +175,12 @@
         f.appendChild(b); f.scrollTop = f.scrollHeight;
     }
 
-    function updateStatus() {
-        if(!isPro) document.getElementById('status-txt').innerText = `Подписка: Free (${3-mCount} ост.)`;
-    }
-
-    async function checkP() {
-        try {
-            const res = await fetch(`${S_URL}/rest/v1/payments?user_id=eq.${uId}&status=eq.success`, {
-                headers: { 'apikey': S_KEY, 'Authorization': `Bearer ${S_KEY}` }
-            });
-            const data = await res.json();
-            if(data.length > 0) {
-                isPro = true;
-                document.getElementById('status-txt').innerText = "Подписка: Aura PRO";
-                document.getElementById('pay-card').style.display = 'none';
-            }
-        } catch(e){}
-    }
-
+    function updateStatus() { if(!isPro) document.getElementById('status-txt').innerText = `Запросов: ${mCount}/5`; }
+    async function checkP() { /* Твой код Supabase */ }
     function openPay() { window.location.href = P_LINK; }
+    function checkNet() { document.getElementById('offline-screen').style.display = navigator.onLine ? 'none' : 'flex'; }
 
-    // ПРОВЕРКА СЕТИ
-    function checkNet() {
-        if (!navigator.onLine) {
-            document.getElementById('offline-screen').style.display = 'flex';
-        } else {
-            document.getElementById('offline-screen').style.display = 'none';
-        }
-    }
-
-    window.onload = () => {
-        checkNet();
-        getW();
-        checkP();
-        updateStatus();
-    };
+    window.onload = () => { checkNet(); initWeather(); updateStatus(); };
     window.addEventListener('online', checkNet);
     window.addEventListener('offline', checkNet);
 </script>
