@@ -179,7 +179,7 @@
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
         if(!text) return;
-        if(mCount >= 5 && !isPro) { alert("Лимит бесплатных запросов! Активируйте PRO."); show('profile'); return; }
+        if(mCount >= 10 && !isPro) { alert("Лимит бесплатных запросов! Активируйте PRO."); show('profile'); return; }
 
         addB(text, 'user');
         input.value = 'Анализирую...';
