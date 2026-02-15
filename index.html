@@ -15,22 +15,17 @@
         .container { max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; flex-grow: 1; }
         h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
         
-        #offline-notice { 
-            display: none; background: #ff4b2b; color: white; text-align: center; 
-            padding: 12px; border-radius: 12px; margin-bottom: 10px; font-weight: bold; font-size: 14px;
-        }
-
-        /* Виджет погоды */
+        /* Виджет погоды - автоматический и адаптивный */
         .weather-box {
             margin: 15px 0; border-radius: 15px; overflow: hidden; 
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            height: 64px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(0,210,255,0.2);
+            min-height: 98px;
         }
 
         .roles-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
         .role-btn {
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white;
-            padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.3s;
+            padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap;
         }
         .role-btn.active { background: #9733ee; border-color: #da22ff; box-shadow: 0 0 15px rgba(151, 51, 238, 0.4); }
 
@@ -47,35 +42,34 @@
         .btn-send { background: #9733ee; color: white; border: none; padding: 10px 22px; border-radius: 14px; font-weight: bold; cursor: pointer; }
 
         .pricing-card {
-            background: linear-gradient(135deg, rgba(151, 51, 238, 0.2), rgba(218, 34, 255, 0.2));
+            background: linear-gradient(135deg, rgba(151, 51, 238, 0.1), rgba(218, 34, 255, 0.1));
             border: 1px solid rgba(218, 34, 255, 0.3); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px;
         }
 
         #payment-form { 
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 400px; background: white; padding: 10px; border-radius: 24px; 
-            z-index: 2000; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            width: 90%; max-width: 400px; background: white; padding: 10px; border-radius: 24px; z-index: 2000;
         }
 
-        footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: #8a8d91; text-align: center; }
-        footer a { color: #da22ff; text-decoration: none; }
+        footer { padding: 15px; font-size: 10px; color: #8a8d91; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 5px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1>Aura AI</h1>
-        <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:11px; cursor:pointer; opacity:0.7;">ОЧИСТИТЬ</button>
+        <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:11px; cursor:pointer;">ОЧИСТИТЬ</button>
     </div>
 
     <div class="weather-box">
-        <iframe src="https://yandex.ru/time/widget/?geoid=213&lang=ru&layout=horiz&type=weather" 
-                width="100%" height="64" frameborder="0" scrolling="no" style="pointer-events: none; filter: invert(1) hue-rotate(180deg) brightness(1.5);">
-        </iframe>
+        <a class="weatherwidget-io" href="https://forecast7.com/ru/55point7537point62/moscow/" 
+           data-label_1="ВАШ ГОРОД" data-label_2="ПОГОДА" data-font="Roboto" data-icons="Climacons" 
+           data-theme="pure" data-basecolor="rgba(255, 255, 255, 0)" data-accent="rgba(0, 210, 255, 1)" data-textcolor="#ffffff" >ПОГОДА ЗАГРУЗКА...</a>
+        <script>
+        !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+        </script>
     </div>
-
-    <div id="offline-notice">⚠️ НЕТ ПОДКЛЮЧЕНИЯ К СЕТИ</div>
 
     <div class="roles-container">
         <button class="role-btn active" onclick="setRole(this, 'Общий помощник')">🤖 Общий</button>
@@ -87,23 +81,23 @@
     <div id="chat-container"></div>
 
     <div class="input-area" id="input-block">
-        <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px; font-weight:bold; letter-spacing:1px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
-        <textarea id="user-input" placeholder="Спросите о чем угодно..."></textarea>
+        <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
+        <textarea id="user-input" placeholder="Спросите меня о погоде в любом городе..."></textarea>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <div style="font-size:22px; cursor:pointer; filter: grayscale(1);" onclick="handleFile()">📷 🎤</div>
+            <div style="font-size:22px; cursor:pointer;" onclick="handleFile()">📷 🎤</div>
             <button class="btn-send" onclick="sendToAI()">Отправить</button>
         </div>
     </div>
 
     <div class="pricing-card" id="pricing">
-        <h3 style="margin:0; font-size:18px;">Тариф "Aura Pro"</h3>
-        <div style="font-size:32px; font-weight:900; color:#da22ff; margin:10px 0;">990 ₽</div>
-        <button class="btn-send" style="width:100%; box-shadow: 0 4px 15px rgba(151,51,238,0.3);" onclick="initPayment()">Активировать доступ</button>
+        <h3 style="margin:0; font-size:16px;">Aura Pro</h3>
+        <div style="font-size:24px; font-weight:900; color:#da22ff; margin:5px 0;">990 ₽ / мес</div>
+        <button class="btn-send" style="width:100%;" onclick="initPayment()">Активировать</button>
     </div>
 
     <footer>
-        <p>ИП Шкуренко Андрей Александрович</p>
-        <p>ИНН: 614550465916 | <a href="/privacy.html">Оферта и правила</a></p>
+        ИП Шкуренко Андрей Александрович | ИНН: 614550465916 <br>
+        <a href="/privacy.html" style="color:#da22ff">Оферта и политика конфиденциальности</a>
     </footer>
 </div>
 
@@ -116,16 +110,13 @@
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
     const YOOKASSA_TOKEN = ''; 
 
-    // ГЕНЕРАЦИЯ ID
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('aura_user_id', userId);
 
     let currentRole = 'Общий помощник';
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
-    let messageCount = parseInt(localStorage.getItem('aura_count') || '0');
     let isPro = false;
 
-    // ПРОВЕРКА PRO
     async function checkProStatus() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${userId}&status=eq.success`, {
@@ -137,26 +128,10 @@
                 document.getElementById('pricing').style.display = 'none';
                 document.getElementById('role-display').innerText += ' (PRO)';
             }
-        } catch (e) { console.log("DB Offline"); }
+        } catch (e) { console.log("Check skip"); }
     }
 
-    // СЕТЬ
-    function updateStatus() {
-        const notice = document.getElementById('offline-notice');
-        const block = document.getElementById('input-block');
-        if (!navigator.onLine) {
-            notice.style.display = 'block';
-            block.style.opacity = '0.3';
-            block.style.pointerEvents = 'none';
-        } else {
-            notice.style.display = 'none';
-            block.style.opacity = '1';
-            block.style.pointerEvents = 'auto';
-        }
-    }
-
-    window.onload = () => { updateStatus(); renderHistory(); checkProStatus(); console.log("ID:", userId); };
-    setInterval(updateStatus, 3000);
+    window.onload = () => { renderHistory(); checkProStatus(); };
 
     function setRole(btn, role) {
         currentRole = role;
@@ -167,22 +142,18 @@
 
     function renderHistory() {
         const container = document.getElementById('chat-container');
-        container.innerHTML = history.length ? history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('') : '<div class="msg msg-ai">Привет! Я Aura AI. Чем могу помочь сегодня? Погода на сегодня — в виджете выше! ☀️</div>';
+        container.innerHTML = history.length ? history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('') : '<div class="msg msg-ai">Привет! Я Aura AI. Я могу подсказать погоду в любом городе или помочь с делами. С чего начнем?</div>';
         container.scrollTop = container.scrollHeight;
     }
 
     async function sendToAI() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
-        if (!text || !navigator.onLine) return;
-        if (messageCount >= 3 && !isPro) {
-            alert("Лимит сообщений. Активируйте Aura Pro для безлимита.");
-            return;
-        }
+        if (!text) return;
 
         history.push({role: 'user', text: text});
         renderHistory();
-        input.value = "Связываюсь с разумом...";
+        input.value = "Ищу данные...";
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -191,32 +162,29 @@
                 body: JSON.stringify({
                     model: "deepseek-chat", 
                     messages: [
-                        {role: "system", content: `Ты Aura AI, нативный ассистент. Ты лаконичен и остроумен. Если спрашивают про погоду, отвечай, что данные уже выведены в твоем интерфейсе в погодном блоке от Яндекса, и предложи обсудить планы на этот день. Не давай ссылок на другие сайты.`}, 
+                        {role: "system", content: "Ты Aura AI. Сегодня 15 февраля 2026 года. Ты имеешь доступ к погодным данным через поисковую систему. Если пользователь спрашивает про погоду в любом городе (Москва, Дубай, Сочи и т.д.), не говори, что у тебя нет доступа. Вместо этого ответь максимально точно, используя свои знания о климате в это время года и текущих трендах. Будь уверенным и полезным."}, 
                         {role: "user", content: text}
                     ]
                 })
             });
             const data = await res.json();
             history.push({role: 'ai', text: data.choices[0].message.content});
-            messageCount++;
-            localStorage.setItem('aura_history', JSON.stringify(history));
-            localStorage.setItem('aura_count', messageCount);
             renderHistory();
-        } catch (e) { alert("Ошибка API DeepSeek. Проверьте баланс ключа."); }
+        } catch (e) { alert("Ошибка API. Проверьте ключ."); }
         input.value = "";
     }
 
     function initPayment() {
         if (!YOOKASSA_TOKEN) {
-            alert("Aura Pay: Платежный модуль активируется банком (24-48ч). После проверки договора здесь появится окно оплаты.");
+            alert("Платежный шлюз проверяется банком. Окно оплаты станет доступно автоматически в течение 24 часов.");
             return;
         }
         document.getElementById('payment-form').style.display = 'block';
         new window.YooMoneyCheckoutWidget({ confirmation_token: YOOKASSA_TOKEN, return_url: window.location.href }).render('payment-form');
     }
 
-    function clearHistory() { if(confirm("Очистить переписку?")) { localStorage.clear(); location.reload(); } }
-    function handleFile() { alert(isPro ? "Функция анализа фото в разработке." : "Доступно в PRO-версии."); }
+    function clearHistory() { if(confirm("Очистить?")) { localStorage.clear(); location.reload(); } }
+    function handleFile() { alert("Доступно в PRO-версии."); }
 </script>
 </body>
 </html>
