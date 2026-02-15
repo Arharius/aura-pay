@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI — Персональный ассистент</title>
+    <title>Aura AI — Умный Ассистент</title>
     <style>
         body {
             background-color: #0f0c29;
@@ -11,13 +11,10 @@
             color: white; font-family: -apple-system, sans-serif;
             margin: 0; padding: 10px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box;
         }
-        
-        /* По умолчанию скрываем контент, пока грузится скрипт */
         .container { max-width: 600px; margin: 0 auto; width: 100%; display: none; flex-direction: column; flex-grow: 1; }
-        
         h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
         
-        /* === ЗАГЛУШКА (Offline) === */
+        /* ЗАГЛУШКА (Offline) */
         #offline-screen {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f0c29; z-index: 999999; flex-direction: column; align-items: center; 
@@ -55,8 +52,8 @@
 <div id="offline-screen">
     <div style="font-size: 80px; margin-bottom: 20px;">📡</div>
     <h1 style="color: #ff4b2b; margin: 0;">НЕТ СВЯЗИ</h1>
-    <p style="color: #fff; padding: 0 40px; margin: 15px 0 25px;">Для работы Aura AI нужен интернет.<br>Проверьте соединение.</p>
-    <button class="btn-send" onclick="forceEnter()">ВОЙТИ / ОБНОВИТЬ</button>
+    <p style="color: #fff; padding: 0 40px; margin: 15px 0 25px;">Для работы нужен интернет.</p>
+    <button class="btn-send" onclick="forceEnter()">ВОЙТИ</button>
 </div>
 
 <div class="container" id="app-content">
@@ -66,14 +63,14 @@
     </div>
 
     <div class="weather-banner">
-        <div id="weather-text">📍 Загрузка погоды...</div>
+        <div id="weather-text">📍 Определение места...</div>
     </div>
 
     <div id="chat-container"></div>
 
     <div class="input-area" id="input-block">
         <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
-        <textarea id="user-input" placeholder="Введите ваш запрос..."></textarea>
+        <textarea id="user-input" placeholder="Спроси: Погода в Дубае?"></textarea>
         <div style="display:flex; justify-content:right; margin-top:10px;">
             <button class="btn-send" onclick="sendToAI()">Отправить</button>
         </div>
@@ -85,21 +82,16 @@
         <button class="btn-send" style="width:100%;" onclick="initPayment()">Активировать PRO</button>
     </div>
 
-    <footer>
-        ИП Шкуренко Андрей Александрович | ИНН: 614550465916 <br>
-        <a href="/privacy.html" style="color:#da22ff; text-decoration: none;">Оферта и политика конфиденциальности</a>
-    </footer>
+    <footer>ИП Шкуренко Андрей Александрович</footer>
 </div>
 
 <script>
-    // === ВСТАВЬ СЮДА СВОИ КЛЮЧИ ===
+    // === ВСТАВЬ КЛЮЧИ СЮДА ===
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
-    
-    // ВСТАВЬ ССЫЛКУ ИЗ ЮКАССЫ
     const PAYMENT_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
-    // =============================
+    // ==========================
 
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('aura_user_id', userId);
@@ -108,59 +100,76 @@
     let isPro = false;
     let weatherLoaded = false;
 
-    // === УМНАЯ ФУНКЦИЯ ПРОВЕРКИ СЕТИ ===
     function checkNetworkAuto() {
-        const overlay = document.getElementById('offline-screen');
-        const content = document.getElementById('app-content');
-
         if (navigator.onLine) {
-            // Если браузер говорит "ОК", скрываем заглушку
-            overlay.style.display = 'none';
-            content.style.display = 'flex';
+            document.getElementById('offline-screen').style.display = 'none';
+            document.getElementById('app-content').style.display = 'flex';
             if (!weatherLoaded) {
-                updateWeather();
+                getLocationAndWeather(); 
                 checkProStatus();
                 weatherLoaded = true;
             }
         }
-        // Если браузер говорит "Нет сети", мы пока НЕ блокируем экран жестко, 
-        // чтобы дать пользователю шанс нажать кнопку "Войти"
     }
 
-    // === РУЧНОЙ ВХОД (КНОПКА) ===
     function forceEnter() {
-        const overlay = document.getElementById('offline-screen');
-        const content = document.getElementById('app-content');
-        
-        // Принудительно пускаем
-        overlay.style.display = 'none';
-        content.style.display = 'flex';
-        
-        // Пробуем обновить данные
-        updateWeather();
-        checkProStatus();
-        window.location.reload(); // Перезагружаем для надежности
+        document.getElementById('offline-screen').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        getLocationAndWeather();
     }
 
-    // Слушаем сеть
     window.addEventListener('online', checkNetworkAuto);
-    // window.addEventListener('offline', ...) // Убрал жесткую блокировку при потере сети на лету, чтобы не бесило
 
-    // ПОГОДА
-    async function updateWeather() {
-        const weatherEl = document.getElementById('weather-text');
-        try {
-            weatherEl.innerText = "📍 Обновление...";
-            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true');
-            if (!res.ok) throw new Error("Ошибка");
-            const data = await res.json();
-            weatherEl.innerText = `📍 Москва: ${Math.round(data.current_weather.temperature)}°C.`;
-        } catch(e) { 
-            weatherEl.innerText = "📍 Погода недоступна"; 
+    // === 1. ГЕОЛОКАЦИЯ (Твоя текущая погода) ===
+    function getLocationAndWeather() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                fetchLocalWeather(position.coords.latitude, position.coords.longitude);
+            }, () => fetchLocalWeather(55.75, 37.61)); // Если отказ - Москва
+        } else {
+            fetchLocalWeather(55.75, 37.61);
         }
     }
 
-    // ПРОВЕРКА PRO
+    async function fetchLocalWeather(lat, lon) {
+        try {
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+            const data = await res.json();
+            document.getElementById('weather-text').innerText = `📍 За окном: ${Math.round(data.current_weather.temperature)}°C`;
+        } catch(e) { 
+            document.getElementById('weather-text').innerText = "📍 Погода недоступна"; 
+        }
+    }
+
+    // === 2. ПОИСК ПОГОДЫ В ЛЮБОМ ГОРОДЕ ===
+    async function searchWorldWeather(text) {
+        // Ищем фразы типа "погода в [Город]" или "температура в [Город]"
+        const match = text.match(/(?:погода|температура)\s+(?:в|во)\s+([а-яА-Яa-zA-Z-]+)/i);
+        
+        if (match && match[1]) {
+            const city = match[1];
+            try {
+                // 1. Ищем координаты города
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=ru&format=json`);
+                const geoData = await geoRes.json();
+                
+                if (geoData.results && geoData.results.length > 0) {
+                    const { latitude, longitude, name, country } = geoData.results[0];
+                    
+                    // 2. Узнаем погоду там
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                    const weatherData = await weatherRes.json();
+                    
+                    return `Пользователь спросил про город ${name} (${country}). Там сейчас: ${weatherData.current_weather.temperature}°C, ветер ${weatherData.current_weather.windspeed} км/ч.`;
+                }
+            } catch (e) {
+                console.log("Ошибка поиска города");
+            }
+        }
+        return ""; // Если города нет в тексте
+    }
+
+    // === ОСТАЛЬНОЙ КОД ===
     async function checkProStatus() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${userId}&status=eq.success`, {
@@ -172,35 +181,24 @@
                 document.getElementById('pricing').style.display = 'none';
                 document.getElementById('role-display').innerText += ' (PRO)';
             }
-        } catch (e) { console.log("Skip check"); }
+        } catch (e) {}
     }
 
-    // ЧАТ
     function renderHistory() {
         const container = document.getElementById('chat-container');
-        if (history.length === 0) {
-            container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Чем помочь?</div>';
-        } else {
-            container.innerHTML = history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('');
-        }
+        if (history.length === 0) container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Могу сказать погоду в любом городе!</div>';
+        else container.innerHTML = history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('');
         container.scrollTop = container.scrollHeight;
     }
 
-    // ОТПРАВКА (С ПОГОДОЙ ВНУТРИ)
     async function sendToAI() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
-
         if (!text) return;
-        
-        // Если нет сети ПРИ ОТПРАВКЕ - тогда ругаемся
-        if (!navigator.onLine) {
-            alert("Нет интернета!");
-            return;
-        }
+        if (!navigator.onLine) { alert("Нет сети"); return; }
 
         if (messageCount >= 3 && !isPro) {
-            alert("Лимит исчерпан. Пожалуйста, активируйте Aura Pro.");
+            alert("Лимит исчерпан. Активируйте PRO.");
             return;
         }
 
@@ -208,9 +206,19 @@
         renderHistory();
         input.value = "...";
 
-        // Берем погоду с экрана
-        const currentW = document.getElementById('weather-text').innerText;
-        const systemMsg = `Ты Aura AI. Кратко и по делу. Твои данные: ${currentW}.`;
+        // 1. Получаем локальную погоду (с верхней плашки)
+        const localW = document.getElementById('weather-text').innerText;
+        
+        // 2. Проверяем, не спросил ли юзер про другой город (МАГИЯ!)
+        const cityWeatherInfo = await searchWorldWeather(text);
+
+        // 3. Собираем инструкцию для бота
+        let systemMsg = `Ты Aura AI. Твоя локальная погода (где ты сейчас): "${localW}".`;
+        if (cityWeatherInfo) {
+            systemMsg += ` ВАЖНО: ${cityWeatherInfo} Используй эти данные для ответа!`;
+        } else {
+            systemMsg += " Если спросят про погоду в другом городе, скажи 'Я сейчас проверяю...' но если я не передал данные, скажи что не нашел город.";
+        }
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -227,18 +235,13 @@
             localStorage.setItem('aura_count', messageCount);
             localStorage.setItem('aura_history', JSON.stringify(history));
             renderHistory();
-        } catch (e) { alert("Ошибка API или сети."); }
+        } catch (e) { alert("Ошибка API"); }
         input.value = "";
     }
 
     function initPayment() {
-        const btn = document.querySelector('#pricing button');
-        btn.innerText = "Оплата...";
-        if (PAYMENT_LINK && PAYMENT_LINK.includes('http')) {
-             window.location.href = PAYMENT_LINK;
-        } else {
-            alert("Ошибка ссылки");
-        }
+        if (PAYMENT_LINK && PAYMENT_LINK.includes('http')) window.location.href = PAYMENT_LINK;
+        else alert("Ссылка не настроена");
     }
 
     function clearHistory() { if(confirm("Очистить?")) { localStorage.clear(); location.reload(); } }
