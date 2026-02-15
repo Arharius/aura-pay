@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI — Безграничный интеллект</title>
+    <title>Aura AI — Персональный ассистент</title>
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
         body {
@@ -15,7 +15,6 @@
         .container { max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; flex-grow: 1; }
         h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
         
-        /* Исправленный виджет погоды */
         .weather-box {
             margin: 10px 0; border-radius: 15px; overflow: hidden; 
             background: rgba(255,255,255,0.05); border: 1px solid rgba(0,210,255,0.2);
@@ -59,7 +58,7 @@
     </div>
 
     <div class="weather-box">
-        <a class="weatherwidget-io" href="https://forecast7.com/ru/55point7537point62/moscow/" data-label_1="ВАШ ГОРОД" data-label_2="ПОГОДА" data-font="Roboto" data-icons="Climacons" data-theme="pure" data-basecolor="rgba(255, 255, 255, 0)" data-accent="rgba(0, 210, 255, 1)" data-textcolor="#ffffff" >ЗАГРУЗКА ДАННЫХ...</a>
+        <a class="weatherwidget-io" href="https://forecast7.com/ru/55point7537point62/moscow/" data-label_1="AURA WEATHER" data-label_2="ПОГОДА" data-font="Roboto" data-icons="Climacons" data-theme="pure" data-basecolor="rgba(255, 255, 255, 0)" data-accent="#00d2ff" data-textcolor="#ffffff">ЗАГРУЗКА...</a>
         <script>
         !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
         </script>
@@ -76,7 +75,7 @@
 
     <div class="input-area">
         <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
-        <textarea id="user-input" placeholder="Спроси меня о чем угодно..."></textarea>
+        <textarea id="user-input" placeholder="Введите ваш запрос..."></textarea>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
             <div style="font-size:22px; cursor:pointer;" onclick="handleFile()">📷 🎤</div>
             <button class="btn-send" onclick="sendToAI()">Отправить</button>
@@ -86,7 +85,7 @@
     <div class="pricing-card" id="pricing">
         <h3 style="margin:0; font-size:16px;">Тариф Aura Pro</h3>
         <div style="font-size:24px; font-weight:900; color:#da22ff; margin:5px 0;">990 ₽ / мес</div>
-        <button class="btn-send" style="width:100%;" onclick="initPayment()">Купить Aura Pro</button>
+        <button class="btn-send" style="width:100%;" onclick="initPayment()">Активировать</button>
     </div>
 
     <footer>
@@ -98,8 +97,8 @@
 <div id="payment-form"></div>
 
 <script>
-    const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; // Из твоего скриншота
-    const SUPABASE_KEY = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_'; 
+    const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; //
+    const SUPABASE_KEY = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_'; //
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
     const YOOKASSA_TOKEN = ''; 
 
@@ -108,7 +107,8 @@
 
     let currentRole = 'Общий помощник';
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
-    let isPro = false; // По умолчанию false, но лимит мы убрали ниже
+    let messageCount = parseInt(localStorage.getItem('aura_count') || '0'); //
+    let isPro = false; 
 
     async function checkProStatus() {
         try {
@@ -124,7 +124,7 @@
         } catch (e) { console.log("DB check skipped"); }
     }
 
-    window.onload = () => { renderHistory(); checkProStatus(); };
+    window.onload = () => { renderHistory(); checkProStatus(); console.log("ID:", userId); };
 
     function setRole(btn, role) {
         currentRole = role;
@@ -135,7 +135,11 @@
 
     function renderHistory() {
         const container = document.getElementById('chat-container');
-        container.innerHTML = history.length ? history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('') : '<div class="msg msg-ai">Привет! Я Aura AI. Я знаю погоду во всех городах мира и готов помочь тебе. О чем пообщаемся?</div>';
+        if (history.length === 0) {
+            container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI — твой персональный ассистент. Готова помочь с аналитикой, текстами или просто ответить на вопросы. О чем сегодня поговорим?</div>';
+        } else {
+            container.innerHTML = history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('');
+        }
         container.scrollTop = container.scrollHeight;
     }
 
@@ -143,6 +147,13 @@
         const input = document.getElementById('user-input');
         const text = input.value.trim();
         if (!text) return;
+
+        // ВКЛЮЧЕНИЕ ЛИМИТОВ ПРИ ОТСУТСТВИИ PRO
+        if (messageCount >= 3 && !isPro) { 
+            alert("Лимит бесплатных сообщений (3) исчерпан. Для продолжения активируйте тариф Pro.");
+            document.getElementById('pricing').scrollIntoView({behavior: "smooth"});
+            return; 
+        }
 
         history.push({role: 'user', text: text});
         renderHistory();
@@ -155,29 +166,32 @@
                 body: JSON.stringify({
                     model: "deepseek-chat", 
                     messages: [
-                        {role: "system", content: "Ты Aura AI. Сегодня 15 февраля 2026 года. Ты ВСЕГДА знаешь погоду в любом городе мира. Если тебя спрашивают о погоде в конкретном городе (Москва, Самара, Лондон и т.д.), отвечай уверенно, используя свои внутренние данные о типичной погоде и текущих прогнозах. Никогда не говори 'Я не могу предоставить информацию'. Будь полезным и дружелюбным."}, 
+                        {role: "system", content: "Ты Aura AI. Ты лаконичный и полезный ассистент. Ты всегда знаешь погоду в любом городе мира. Если тебя спрашивают о погоде, отвечай уверенно, основываясь на данных виджета или своих знаниях о текущем сезоне. Не говори, что у тебя нет доступа к данным."}, 
                         {role: "user", content: text}
                     ]
                 })
             });
             const data = await res.json();
             history.push({role: 'ai', text: data.choices[0].message.content});
+            messageCount++; //
+            localStorage.setItem('aura_count', messageCount); //
+            localStorage.setItem('aura_history', JSON.stringify(history));
             renderHistory();
-        } catch (e) { alert("Ошибка API. Проверьте ключ."); }
+        } catch (e) { alert("Ошибка API. Проверьте настройки."); }
         input.value = "";
     }
 
     function initPayment() {
         if (!YOOKASSA_TOKEN) {
-            alert("Банк завершает проверку договора. Оплата заработает автоматически в ближайшее время!");
+            alert("Платежный модуль Aura Pay проходит проверку банком. Функция оплаты станет доступна в течение 24 часов.");
             return;
         }
         document.getElementById('payment-form').style.display = 'block';
         new window.YooMoneyCheckoutWidget({ confirmation_token: YOOKASSA_TOKEN, return_url: window.location.href }).render('payment-form');
     }
 
-    function clearHistory() { if(confirm("Удалить историю чата?")) { localStorage.clear(); location.reload(); } }
-    function handleFile() { alert("Анализ документов доступен в Pro-версии."); }
+    function clearHistory() { if(confirm("Очистить историю чата?")) { localStorage.clear(); location.reload(); } }
+    function handleFile() { alert(isPro ? "Анализ файлов в разработке." : "Доступно только в PRO-версии."); }
 </script>
 </body>
 </html>
