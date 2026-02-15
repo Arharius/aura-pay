@@ -184,16 +184,53 @@
         }
     }
 
-    async function sendMessage() {
+   async function sendMessage() {
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
         if(!text) return;
 
+        // Лимиты
         if(msgCount >= 3 && !isPro) {
             alert("Лимит исчерпан. Перейдите в профиль.");
             showScreen('profile');
             return;
         }
+
+        addBubble(text, 'user');
+        input.value = 'Жду ответ...';
+
+        // === МАГИЯ ТУТ: Собираем данные для "Мозга" ===
+        // 1. Берем погоду, которая УЖЕ написана на экране в плашке
+        const currentWeatherData = document.getElementById('weather').innerText;
+        
+        // 2. Создаем системную инструкцию (шпаргалку)
+        const systemPrompt = `Ты Aura AI, умный ассистент. 
+        ВАЖНО: Тебе доступны данные в реальном времени: ${currentWeatherData}. 
+        Если пользователь спрашивает про погоду, отвечай, используя эти данные. 
+        Сегодня 15 февраля 2026 года.`;
+
+        try {
+            const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
+                body: JSON.stringify({
+                    model: "deepseek-chat",
+                    messages: [
+                        {role: "system", content: systemPrompt}, // Подкладываем шпаргалку
+                        {role: "user", content: text}
+                    ]
+                })
+            });
+            const data = await res.json();
+            addBubble(data.choices[0].message.content, 'ai');
+            msgCount++;
+            localStorage.setItem('aura_c', msgCount);
+            updateStatusText();
+        } catch(e) { 
+            addBubble("Ошибка связи. Проверь интернет.", 'ai'); 
+        }
+        input.value = '';
+    }
 
         addBubble(text, 'user');
         input.value = 'Жду ответ...';
