@@ -118,7 +118,7 @@
         const desc = document.getElementById('status-desc');
 
         if (navigator.onLine) {
-            // ИНТЕРНЕТ ЕСТЬ -> Скрываем заглушку
+            // ИНТЕРНЕТ ЕСТЬ -> Мгновенно пускаем внутрь
             blocker.style.display = 'none';
             header.style.display = 'flex';
             nav.style.display = 'flex';
@@ -126,14 +126,32 @@
             updateWeather();
             checkStatus();
         } else {
-            // ИНТЕРНЕТА НЕТ -> Показываем ошибку
-            blocker.style.display = 'flex';
+            // ИНТЕРНЕТА НЕТ -> Показываем ошибку и кнопку
             title.innerText = "Офлайн-режим";
             title.style.color = "#ff4b2b";
-            desc.innerText = "Приложение Aura AI требует подключения к интернету.";
+            desc.innerText = "Подключитесь к сети для работы Aura AI";
             retryBtn.style.display = "block";
+            blocker.style.display = 'flex';
         }
     }
+
+    // ТАЙМЕР СПАСЕНИЯ (Если зависло на "Проверке связи")
+    window.onload = () => {
+        // Пробуем проверить сразу
+        checkConnection();
+        
+        // Если через 3 секунды всё еще висит "Проверка связи" - принудительно показываем кнопку
+        setTimeout(() => {
+            const title = document.getElementById('status-title');
+            if (title && title.innerText === "Проверка связи...") {
+                title.innerText = "Связь задерживается";
+                document.getElementById('retry-btn').style.display = "block";
+                document.getElementById('status-desc').innerText = "Нажмите обновить или проверьте Wi-Fi";
+            }
+        }, 3000);
+
+        updateStatusText();
+    };
 
     // Запускаем проверку через 1 секунду после загрузки (чтобы не моргало)
     window.onload = () => {
