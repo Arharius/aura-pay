@@ -53,10 +53,11 @@
         <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:11px; cursor:pointer;">ОЧИСТИТЬ</button>
     </div>
 
-    <div class="weather-box">
-        <a class="weatherwidget-io" href="https://forecast7.com/ru/55point7537point62/moscow/" data-label_1="AURA WEATHER" data-label_2="ПОГОДА" data-font="Roboto" data-icons="Climacons" data-theme="pure" data-basecolor="rgba(0,0,0,0)" data-accent="#00d2ff" data-textcolor="#ffffff">ЗАГРУЗКА...</a>
-        <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');</script>
-    </div>
+    <div class="weather-box" style="margin: 10px 0; border-radius: 15px; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid rgba(0,210,255,0.2); min-height: 100px;">
+    <iframe src="https://yandex.ru/time/widget/?geoid=213&lang=ru&layout=horiz&type=weather&theme=dark" 
+            width="100%" height="98" frameborder="0" scrolling="no" style="pointer-events: none;">
+    </iframe>
+</div>
 
     <div id="chat-container"></div>
 
