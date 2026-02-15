@@ -11,13 +11,16 @@
             color: white; font-family: -apple-system, sans-serif;
             margin: 0; padding: 10px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box;
         }
+        
+        /* КОНТЕНТ ПО УМОЛЧАНИЮ СКРЫТ (Чтобы не мигал перед заглушкой) */
         .container { max-width: 600px; margin: 0 auto; width: 100%; display: none; flex-direction: column; flex-grow: 1; }
+        
         h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
         
-        /* ЗАГЛУШКА ОФЛАЙН (Главное требование RuStore) */
+        /* === ЗАГЛУШКА === */
         #offline-screen {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f0c29; z-index: 10000; flex-direction: column; align-items: center; 
+            background: #0f0c29; z-index: 999999; flex-direction: column; align-items: center; 
             justify-content: center; text-align: center;
         }
 
@@ -37,7 +40,6 @@
         .input-area { background: rgba(255,255,255,0.08); border-radius: 22px; padding: 15px; margin-bottom: 15px; }
         textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; outline: none; min-height: 44px; }
         .btn-send { background: #9733ee; color: white; border: none; padding: 10px 22px; border-radius: 14px; font-weight: bold; cursor: pointer; }
-        
         .btn-send:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .pricing-card {
@@ -53,7 +55,7 @@
 <div id="offline-screen">
     <div style="font-size: 80px; margin-bottom: 20px;">📡</div>
     <h1 style="color: #ff4b2b; margin: 0;">НЕТ СВЯЗИ</h1>
-    <p style="color: #fff; padding: 0 40px; margin: 15px 0 25px;">Приложению Aura AI требуется интернет. Проверьте соединение.</p>
+    <p style="color: #fff; padding: 0 40px; margin: 15px 0 25px;">Для работы Aura AI нужен интернет.<br>Включите Wi-Fi или мобильную сеть.</p>
     <button class="btn-send" onclick="location.reload()">ОБНОВИТЬ</button>
 </div>
 
@@ -64,7 +66,7 @@
     </div>
 
     <div class="weather-banner">
-        <div id="weather-text">📍 Определение погоды...</div>
+        <div id="weather-text">📍 Загрузка погоды...</div>
     </div>
 
     <div id="chat-container"></div>
@@ -90,12 +92,12 @@
 </div>
 
 <script>
-    // === ВСТАВЬ СВОИ ДАННЫЕ ТУТ ===
+    // === ВСТАВЬ СЮДА СВОИ КЛЮЧИ ===
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
     
-    // ВСТАВЬ СЮДА ССЫЛКУ, КОТОРУЮ СКОПИРУЕШЬ В ЮКАССЕ (Многоразовый счет)
+    // ВСТАВЬ ССЫЛКУ ИЗ ЮКАССЫ
     const PAYMENT_LINK = 'https://yookassa.ru/my/i/aZHd_rui8F2g/l'; 
     // =============================
 
@@ -104,28 +106,49 @@
     let messageCount = parseInt(localStorage.getItem('aura_count') || '0');
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
     let isPro = false;
+    let weatherLoaded = false;
 
-    // ПРОВЕРКА СЕТИ (Offline Заглушка)
-    function checkNetwork() {
+    // === ГЛАВНАЯ ФУНКЦИЯ ПРОВЕРКИ СЕТИ ===
+    function updateNetworkStatus() {
         const overlay = document.getElementById('offline-screen');
         const content = document.getElementById('app-content');
+        
         if (navigator.onLine) {
+            // ИНТЕРНЕТ ЕСТЬ
             overlay.style.display = 'none';
             content.style.display = 'flex';
+            
+            // Если погода еще не загружена - грузим её прямо сейчас
+            if (!weatherLoaded) {
+                updateWeather();
+                checkProStatus();
+                weatherLoaded = true;
+            }
         } else {
+            // ИНТЕРНЕТА НЕТ
             overlay.style.display = 'flex';
             content.style.display = 'none';
+            weatherLoaded = false; // Сбрасываем флаг, чтобы при появлении сети обновить данные
         }
     }
-    setInterval(checkNetwork, 1000);
+
+    // Слушаем сеть
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
 
     // ПОГОДА
     async function updateWeather() {
+        const weatherEl = document.getElementById('weather-text');
         try {
+            weatherEl.innerText = "📍 Обновление...";
             const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true');
+            if (!res.ok) throw new Error("Ошибка API");
             const data = await res.json();
-            document.getElementById('weather-text').innerText = `📍 Москва: ${Math.round(data.current_weather.temperature)}°C.`;
-        } catch(e) { document.getElementById('weather-text').innerText = "📍 Погода недоступна"; }
+            weatherEl.innerText = `📍 Москва: ${Math.round(data.current_weather.temperature)}°C.`;
+        } catch(e) { 
+            console.error(e);
+            weatherEl.innerText = "📍 Погода недоступна"; 
+        }
     }
 
     // ПРОВЕРКА PRO СТАТУСА
@@ -157,7 +180,13 @@
     async function sendToAI() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
-        if (!text || !navigator.onLine) return;
+        
+        if (!navigator.onLine) {
+            updateNetworkStatus(); // Показать заглушку если сети нет
+            return;
+        }
+
+        if (!text) return;
 
         if (messageCount >= 3 && !isPro) {
             alert("Лимит исчерпан. Пожалуйста, активируйте Aura Pro.");
@@ -187,16 +216,15 @@
         input.value = "";
     }
 
-    // === ФУНКЦИЯ ОПЛАТЫ (ПРЯМАЯ ССЫЛКА) ===
+    // ОПЛАТА (Прямая ссылка)
     function initPayment() {
         const btn = document.querySelector('#pricing button');
         btn.innerText = "Переходим к оплате...";
         
-        // Проверяем, вставил ли ты ссылку
-        if (PAYMENT_LINK.includes('http')) {
+        if (PAYMENT_LINK && PAYMENT_LINK.includes('http')) {
              window.location.href = PAYMENT_LINK;
         } else {
-            alert("Ссылка на оплату еще не добавлена в код.");
+            alert("Ссылка на оплату еще не добавлена.");
             btn.innerText = "Активировать PRO";
         }
     }
@@ -204,10 +232,8 @@
     function clearHistory() { if(confirm("Очистить?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
-        checkNetwork();
         renderHistory();
-        updateWeather();
-        checkProStatus();
+        updateNetworkStatus(); // Эта функция теперь сама запустит погоду, если сеть есть
     };
 </script>
 </body>
