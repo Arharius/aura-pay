@@ -2,62 +2,119 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura AI — Оплата Pro</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aura AI</title>
+    <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
-        body { background: #05050a; color: white; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; max-width: 400px; width: 90%; }
-        h1 { font-size: 28px; margin-bottom: 10px; background: linear-gradient(45deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        input { width: 100%; padding: 12px; margin: 20px 0; border-radius: 12px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #6366f1; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #4f46e5; transform: translateY(-2px); }
-        .footer { margin-top: 30px; font-size: 12px; color: #666; line-height: 1.6; }
-        a { color: #4b5563; text-decoration: none; margin: 0 10px; }
+        body {
+            background-color: #0f0c29; /* Темный фон как на иконке */
+            background-image: linear-gradient(315deg, #0f0c29 0%, #302b63 74%, #24243e 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-weight: 300;
+            margin-bottom: 10px;
+            background: -webkit-linear-gradient(#00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #aab2bd;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #da22ff, #9733ee);
+            color: white;
+            box-shadow: 0 4px 15px rgba(218, 34, 255, 0.3);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        .status {
+            font-size: 12px;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Aura AI Pro</h1>
-        <p>Введите ваш ID из приложения для активации доступа</p>
-        
-        <input type="text" id="userId" placeholder="Ваш ID (например, 12345)">
-        <button onclick="handlePayment()">Оплатить 990 ₽</button>
 
-        <div class="footer">
-            Исполнитель: Шкуренко Андрей Александрович<br>
-            ИНН: 614550465916 | Arharius@yandex.ru<br>
-            <div style="margin-top:10px;">
-                <a href="/terms.html">Оферта</a>
-                <a href="/privacy.html">Конфиденциальность</a>
-            </div>
-        </div>
+    <h1>Aura AI</h1>
+    <div class="subtitle">Ваш персональный ассистент</div>
+
+    <div class="card">
+        <div class="status">● System Online</div>
+        <h3>Новый диалог</h3>
+        <p style="font-size: 13px; color: #ccc; line-height: 1.5;">
+            Задайте вопрос, попросите написать текст или сгенерировать идею.
+        </p>
+        <button class="btn btn-secondary" onclick="startChat()">Начать чат</button>
+    </div>
+
+    <div class="card" style="border: 1px solid #da22ff;">
+        <h3 style="margin-top:0;">Aura Pro 🚀</h3>
+        <ul style="font-size: 13px; color: #eee; padding-left: 20px; line-height: 1.6;">
+            <li>Безлимитные запросы</li>
+            <li>Ответы в 2 раза быстрее</li>
+            <li>Доступ к GPT-4o</li>
+        </ul>
+        <button id="pay-button" class="btn btn-primary">Активировать за 990₽</button>
     </div>
 
     <script>
-        // Инициализация базы данных
-        const supabaseUrl = 'https://moqcrppxzfajqyifyhjq.supabase.co';
-        const supabaseKey = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_';
-        const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
-
-        async function handlePayment() {
-            const id = document.getElementById('userId').value;
-            if (!id) return alert('Пожалуйста, введите ID');
-
-            // 1. Сохраняем намерение оплаты в базу
-            const { error } = await supabase
-                .from('user_subscriptions')
-                .upsert({ user_id: id, is_pro: true });
-
-            if (error) {
-                console.error(error);
-                alert('Ошибка связи с базой данных');
-            } else {
-                // 2. Перенаправляем на оплату (здесь будет ваша ссылка из ЮKassa)
-                alert('ID подтвержден. Переходим к оплате...');
-                window.location.href = 'https://yookassa.ru/my/i/ВАША_ССЫЛКА_ТУТ'; 
-            }
+        // Функция-имитация чата
+        function startChat() {
+            alert("Инициализация нейросети...\n\n(Функция чата будет доступна после проверки подписки)");
         }
+
+        // --- КОД ОПЛАТЫ (ОСТАВЛЯЕМ КАК БЫЛО) ---
+        const checkout = new window.YooMoneyCheckoutWidget({
+            confirmation_token: 'ВАШ_TOKEN_ОТ_БЭКЕНДА', // Сюда потом вставим код
+            return_url: 'https://aura-ai-pay.vercel.app/success',
+            error_callback: function(error) {
+                console.log(error);
+            }
+        });
+
+        document.getElementById('pay-button').addEventListener('click', function() {
+            // ПОКА СТАРАЯ ЗАГЛУШКА
+             alert("Переход к оплате..."); 
+            // Когда ЮKassa даст ссылку, раскомментируем и вставим её:
+            // window.location.href = 'ВАША_ССЫЛКА_ОТ_ЮКАССЫ';
+        });
     </script>
+
 </body>
 </html>
