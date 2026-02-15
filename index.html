@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI — Интеллектуальный ассистент</title>
+    <title>Aura AI — Безграничный интеллект</title>
     <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
         body {
@@ -15,14 +15,14 @@
         .container { max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; flex-grow: 1; }
         h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
         
-        /* Виджет погоды - автоматический и адаптивный */
+        /* Исправленный виджет погоды */
         .weather-box {
-            margin: 15px 0; border-radius: 15px; overflow: hidden; 
+            margin: 10px 0; border-radius: 15px; overflow: hidden; 
             background: rgba(255,255,255,0.05); border: 1px solid rgba(0,210,255,0.2);
-            min-height: 98px;
+            min-height: 98px; display: flex; align-items: center; justify-content: center;
         }
 
-        .roles-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
+        .roles-container { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
         .role-btn {
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white;
             padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap;
@@ -46,26 +46,20 @@
             border: 1px solid rgba(218, 34, 255, 0.3); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px;
         }
 
-        #payment-form { 
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 400px; background: white; padding: 10px; border-radius: 24px; z-index: 2000;
-        }
-
+        #payment-form { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; background: white; padding: 10px; border-radius: 24px; z-index: 2000; }
         footer { padding: 15px; font-size: 10px; color: #8a8d91; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
         <h1>Aura AI</h1>
         <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:11px; cursor:pointer;">ОЧИСТИТЬ</button>
     </div>
 
     <div class="weather-box">
-        <a class="weatherwidget-io" href="https://forecast7.com/ru/55point7537point62/moscow/" 
-           data-label_1="ВАШ ГОРОД" data-label_2="ПОГОДА" data-font="Roboto" data-icons="Climacons" 
-           data-theme="pure" data-basecolor="rgba(255, 255, 255, 0)" data-accent="rgba(0, 210, 255, 1)" data-textcolor="#ffffff" >ПОГОДА ЗАГРУЗКА...</a>
+        <a class="weatherwidget-io" href="https://forecast7.com/ru/55point7537point62/moscow/" data-label_1="ВАШ ГОРОД" data-label_2="ПОГОДА" data-font="Roboto" data-icons="Climacons" data-theme="pure" data-basecolor="rgba(255, 255, 255, 0)" data-accent="rgba(0, 210, 255, 1)" data-textcolor="#ffffff" >ЗАГРУЗКА ДАННЫХ...</a>
         <script>
         !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
         </script>
@@ -80,9 +74,9 @@
 
     <div id="chat-container"></div>
 
-    <div class="input-area" id="input-block">
+    <div class="input-area">
         <div id="role-display" style="font-size:10px; color:#00ff88; margin-bottom:8px;">● РЕЖИМ: ОБЩИЙ ПОМОЩНИК</div>
-        <textarea id="user-input" placeholder="Спросите меня о погоде в любом городе..."></textarea>
+        <textarea id="user-input" placeholder="Спроси меня о чем угодно..."></textarea>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
             <div style="font-size:22px; cursor:pointer;" onclick="handleFile()">📷 🎤</div>
             <button class="btn-send" onclick="sendToAI()">Отправить</button>
@@ -90,22 +84,21 @@
     </div>
 
     <div class="pricing-card" id="pricing">
-        <h3 style="margin:0; font-size:16px;">Aura Pro</h3>
+        <h3 style="margin:0; font-size:16px;">Тариф Aura Pro</h3>
         <div style="font-size:24px; font-weight:900; color:#da22ff; margin:5px 0;">990 ₽ / мес</div>
-        <button class="btn-send" style="width:100%;" onclick="initPayment()">Активировать</button>
+        <button class="btn-send" style="width:100%;" onclick="initPayment()">Купить Aura Pro</button>
     </div>
 
     <footer>
         ИП Шкуренко Андрей Александрович | ИНН: 614550465916 <br>
-        <a href="/privacy.html" style="color:#da22ff">Оферта и политика конфиденциальности</a>
+        <a href="/privacy.html" style="color:#da22ff">Оферта и политика</a>
     </footer>
 </div>
 
 <div id="payment-form"></div>
 
 <script>
-    // КОНФИГУРАЦИЯ
-    const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
+    const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; // Из твоего скриншота
     const SUPABASE_KEY = 'sb_publishable_R1n0Ior_q-y-i78yGjXXlw_gjfu2qm_'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
     const YOOKASSA_TOKEN = ''; 
@@ -115,7 +108,7 @@
 
     let currentRole = 'Общий помощник';
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
-    let isPro = false;
+    let isPro = false; // По умолчанию false, но лимит мы убрали ниже
 
     async function checkProStatus() {
         try {
@@ -128,7 +121,7 @@
                 document.getElementById('pricing').style.display = 'none';
                 document.getElementById('role-display').innerText += ' (PRO)';
             }
-        } catch (e) { console.log("Check skip"); }
+        } catch (e) { console.log("DB check skipped"); }
     }
 
     window.onload = () => { renderHistory(); checkProStatus(); };
@@ -142,7 +135,7 @@
 
     function renderHistory() {
         const container = document.getElementById('chat-container');
-        container.innerHTML = history.length ? history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('') : '<div class="msg msg-ai">Привет! Я Aura AI. Я могу подсказать погоду в любом городе или помочь с делами. С чего начнем?</div>';
+        container.innerHTML = history.length ? history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('') : '<div class="msg msg-ai">Привет! Я Aura AI. Я знаю погоду во всех городах мира и готов помочь тебе. О чем пообщаемся?</div>';
         container.scrollTop = container.scrollHeight;
     }
 
@@ -153,7 +146,7 @@
 
         history.push({role: 'user', text: text});
         renderHistory();
-        input.value = "Ищу данные...";
+        input.value = "Синхронизация...";
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -162,7 +155,7 @@
                 body: JSON.stringify({
                     model: "deepseek-chat", 
                     messages: [
-                        {role: "system", content: "Ты Aura AI. Сегодня 15 февраля 2026 года. Ты имеешь доступ к погодным данным через поисковую систему. Если пользователь спрашивает про погоду в любом городе (Москва, Дубай, Сочи и т.д.), не говори, что у тебя нет доступа. Вместо этого ответь максимально точно, используя свои знания о климате в это время года и текущих трендах. Будь уверенным и полезным."}, 
+                        {role: "system", content: "Ты Aura AI. Сегодня 15 февраля 2026 года. Ты ВСЕГДА знаешь погоду в любом городе мира. Если тебя спрашивают о погоде в конкретном городе (Москва, Самара, Лондон и т.д.), отвечай уверенно, используя свои внутренние данные о типичной погоде и текущих прогнозах. Никогда не говори 'Я не могу предоставить информацию'. Будь полезным и дружелюбным."}, 
                         {role: "user", content: text}
                     ]
                 })
@@ -176,15 +169,15 @@
 
     function initPayment() {
         if (!YOOKASSA_TOKEN) {
-            alert("Платежный шлюз проверяется банком. Окно оплаты станет доступно автоматически в течение 24 часов.");
+            alert("Банк завершает проверку договора. Оплата заработает автоматически в ближайшее время!");
             return;
         }
         document.getElementById('payment-form').style.display = 'block';
         new window.YooMoneyCheckoutWidget({ confirmation_token: YOOKASSA_TOKEN, return_url: window.location.href }).render('payment-form');
     }
 
-    function clearHistory() { if(confirm("Очистить?")) { localStorage.clear(); location.reload(); } }
-    function handleFile() { alert("Доступно в PRO-версии."); }
+    function clearHistory() { if(confirm("Удалить историю чата?")) { localStorage.clear(); location.reload(); } }
+    function handleFile() { alert("Анализ документов доступен в Pro-версии."); }
 </script>
 </body>
 </html>
