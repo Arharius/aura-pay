@@ -93,12 +93,41 @@
         let isPro = false;
         let recognition;
 
-        function setRole(btn, role) {
-            currentRole = role;
-            document.getElementById('role-display').innerText = '● Режим: ' + role;
-            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
+       function setRole(btn, role) {
+    currentRole = role;
+    const display = document.getElementById('role-display');
+    const input = document.getElementById('user-input');
+
+    // 1. Меняем текст и цвет индикатора
+    display.innerText = '● Режим: ' + role;
+    
+    if (role === 'Юрист-консультант') {
+        display.style.color = '#ffcc00'; // Золотой для юриста
+        input.placeholder = "Опишите юридический вопрос или загрузите договор...";
+    } else if (role === 'Маркетолог') {
+        display.style.color = '#00d2ff'; // Голубой для маркетинга
+        input.placeholder = "Введите название товара или нишу для контент-плана...";
+    } else if (role === 'Психолог') {
+        display.style.color = '#00ff88'; // Зеленый для психолога
+        input.placeholder = "Расскажите, что вас беспокоит...";
+    } else if (role === 'Методист') {
+        display.style.color = '#da22ff'; // Фиолетовый для учебы
+        input.placeholder = "Скиньте условие задачи или тему курсовой...";
+    } else {
+        display.style.color = '#00ff88'; // Стандартный
+        input.placeholder = "Введите ваш запрос...";
+    }
+
+    // 2. Добавляем визуальный эффект "мигания" карточке, чтобы заметить смену
+    const card = document.querySelector('.card');
+    card.style.transition = "0.3s";
+    card.style.boxShadow = "0 0 20px " + display.style.color;
+    setTimeout(() => { card.style.boxShadow = "none"; }, 500);
+
+    // 3. Обновляем активную кнопку
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
 
         async function sendToAI() {
             const userInput = document.getElementById('user-input');
