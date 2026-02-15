@@ -2,111 +2,165 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI — Smart Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Aura AI</title>
     <style>
-        :root { --bg: #0f0c29; --accent: #00d2ff; }
-        body { background: var(--bg); color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        :root { --bg: #0f0c29; --accent: #00d2ff; --card-bg: rgba(255,255,255,0.06); }
         
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            background: var(--bg); 
+            color: white; 
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         /* ЗАГЛУШКА ОФЛАЙН */
-        #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        
-        /* ОСНОВНЫЕ ЭКРАНЫ */
-        .screen { flex-grow: 1; display: none; flex-direction: column; padding: 15px; padding-bottom: 75px; overflow-y: auto; }
-        .active { display: flex; }
-        
+        #offline-screen { 
+            display: none; position: fixed; inset: 0; background: var(--bg); z-index: 10000; 
+            flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; 
+        }
+
         /* ШАПКА */
-        header { padding: 15px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .weather-pill { background: rgba(0,210,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; }
+        header { 
+            padding: 15px 20px; 
+            padding-top: calc(15px + env(safe-area-inset-top));
+            background: rgba(0,0,0,0.3); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        header h1 { font-size: 18px; margin: 0; letter-spacing: 1px; }
+
+        /* ЭКРАНЫ */
+        .screen { 
+            flex: 1; 
+            display: none; 
+            flex-direction: column; 
+            padding: 20px; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+        }
+        .active { display: flex; }
 
         /* ЧАТ */
-        #chat-flow { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px 0; }
-        .bubble { max-width: 85%; padding: 12px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
-        .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); }
-        .ai { align-self: flex-start; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); }
+        #chat-flow { flex: 1; display: flex; flex-direction: column; gap: 12px; margin-bottom: 70px; }
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); border-bottom-right-radius: 4px; }
+        .ai { align-self: flex-start; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
 
-        .input-area { display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px; margin-top: 5px; border: 1px solid rgba(255,255,255,0.1); }
-        input { flex-grow: 1; background: transparent; border: none; color: white; outline: none; font-size: 15px; }
-        .btn-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; color: #000; font-weight: bold; }
+        .input-container { 
+            position: fixed; bottom: 80px; left: 15px; right: 15px;
+            display: flex; gap: 10px; background: #1e2240; padding: 8px 12px; border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 15px; padding: 8px; }
+        .btn-send { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: none; color: #000; font-weight: bold; cursor: pointer; flex-shrink: 0; }
 
         /* СЕТКА ИНСТРУМЕНТОВ */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px 10px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .card:active { transform: scale(0.96); background: rgba(255,255,255,0.08); }
-        .card i { font-style: normal; font-size: 26px; display: block; margin-bottom: 8px; }
-        .card span { font-size: 12px; font-weight: 600; color: #eee; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 12px; 
+            padding-bottom: 100px;
+        }
+        .card { 
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 16px; padding: 20px 10px; text-align: center; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .card i { font-size: 28px; font-style: normal; margin-bottom: 10px; display: block; }
+        .card span { font-size: 13px; font-weight: 500; }
 
         /* ПРОФИЛЬ */
-        .promo { background: linear-gradient(135deg, #da22ff, #9733ee); padding: 20px; border-radius: 20px; text-align: center; margin-top: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .btn-buy { width: 100%; padding: 15px; border-radius: 12px; border: none; background: white; color: #9733ee; font-weight: 800; margin-top: 15px; font-size: 15px; }
+        .promo-box { 
+            background: linear-gradient(135deg, #da22ff, #9733ee); 
+            padding: 25px; border-radius: 20px; text-align: center; margin: 15px 0;
+        }
+        .btn-pro { width: 100%; padding: 14px; border-radius: 12px; border: none; background: white; color: #9733ee; font-weight: bold; font-size: 16px; margin-top: 15px; }
 
-        /* НИЖНЕЕ МЕНЮ */
-        nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #161b33; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; }
-        .nav-link { color: #666; text-align: center; font-size: 11px; cursor: pointer; text-decoration: none; transition: 0.3s; }
-        .nav-link.active { color: var(--accent); }
-        .nav-link i { font-size: 20px; display: block; margin-bottom: 4px; font-style: normal; }
+        /* НАВИГАЦИЯ */
+        nav { 
+            height: calc(65px + env(safe-area-inset-bottom)); 
+            background: #161b33; display: flex; justify-content: space-around; 
+            align-items: center; border-top: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: env(safe-area-inset-bottom);
+            position: fixed; bottom: 0; width: 100%;
+        }
+        .nav-item { color: #666; text-align: center; font-size: 10px; cursor: pointer; flex: 1; padding: 10px; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; font-style: normal; }
+
+        .weather-pill { background: rgba(0,210,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--accent); font-weight: bold; border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="offline-screen">
-    <div style="font-size: 60px;">📡</div>
-    <h2 style="color:#ff4b2b">Нет связи</h2>
-    <p>Проверьте интернет для работы Aura AI</p>
-    <button onclick="location.reload()" style="padding: 12px 25px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold;">ОБНОВИТЬ</button>
+    <div style="font-size: 50px; margin-bottom: 15px;">📡</div>
+    <h2 style="margin: 0;">Нет интернета</h2>
+    <p style="color: #888;">Для работы Aura AI нужно подключение</p>
+    <button onclick="location.reload()" style="padding: 12px 24px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold; margin-top: 15px;">Обновить</button>
 </div>
 
 <header>
-    <h1 style="font-size: 20px; letter-spacing: 1px;">AURA AI</h1>
+    <h1>AURA AI</h1>
     <div id="weather" class="weather-pill">Определяем...</div>
 </header>
 
 <div id="screen-chat" class="screen active">
     <div id="chat-flow">
-        <div class="bubble ai">Привет! Я твой ИИ-ассистент. Готов помочь с текстами, переводом или погодой в любой точке мира!</div>
+        <div class="bubble ai">Привет! Я Aura. Готова помочь с любым запросом: от планов на вечер до исправления ошибок в тексте. Чем займемся?</div>
     </div>
-    <div class="input-area">
+    <div class="input-container">
         <input type="text" id="user-msg" placeholder="Спроси о чем угодно...">
         <button class="btn-send" onclick="sendMessage()">➤</button>
     </div>
 </div>
 
 <div id="screen-tools" class="screen">
-    <h2 style="font-size: 20px; margin-bottom: 5px;">Инструменты</h2>
-    <p style="color: #888; font-size: 13px; margin-bottom: 20px;">Быстрые команды для нейросети</p>
+    <h2 style="font-size: 22px; margin-bottom: 5px;">Инструменты</h2>
+    <p style="color: #888; margin-bottom: 25px; font-size: 14px;">Выберите задачу для ИИ</p>
     <div class="grid">
-        <div class="card" onclick="quickTask('Составь план путешествия на 3 дня в: ')"><i>✈️</i><span>Тур-план</span></div>
-        <div class="card" onclick="quickTask('Придумай рецепт блюда из следующих продуктов: ')"><i>🍳</i><span>Шеф-повар</span></div>
-        <div class="card" onclick="quickTask('Посоветуй музыку под настроение: ')"><i>🎵</i><span>Музыка</span></div>
-        <div class="card" onclick="quickTask('Найди книгу, похожую на: ')"><i>📚</i><span>Книги</span></div>
-        <div class="card" onclick="quickTask('Напиши пост для соцсетей на тему: ')"><i>📝</i><span>Написать пост</span></div>
-        <div class="card" onclick="quickTask('Переведи на английский текст: ')"><i>🌍</i><span>Переводчик</span></div>
+        <div class="card" onclick="quick('Составь план путешествия на 3 дня в: ')"><i>✈️</i><span>Тур-план</span></div>
+        <div class="card" onclick="quick('Придумай рецепт блюда из: ')"><i>🍳</i><span>Шеф-повар</span></div>
+        <div class="card" onclick="quick('Посоветуй музыку под настроение: ')"><i>🎵</i><span>Музыка</span></div>
+        <div class="card" onclick="quick('Найди книгу, похожую на: ')"><i>📚</i><span>Книги</span></div>
+        <div class="card" onclick="quick('Напиши пост для соцсетей на тему: ')"><i>📝</i><span>Пост</span></div>
+        <div class="card" onclick="quick('Переведи на английский: ')"><i>🌍</i><span>Переводчик</span></div>
     </div>
 </div>
 
 <div id="screen-profile" class="screen">
-    <h2 style="font-size: 20px;">Профиль</h2>
-    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; margin-top: 10px;">
-        <div id="status-txt" style="font-weight: bold; font-size: 15px;">Версия: Free</div>
-        <div id="id-info" style="font-size: 11px; color: #666; margin-top: 5px;"></div>
+    <h2 style="font-size: 22px; margin-bottom: 10px;">Профиль</h2>
+    <div style="background: var(--card-bg); padding: 15px; border-radius: 15px;">
+        <div id="status-txt" style="font-weight: bold;">Статус: Free</div>
+        <div id="id-display" style="font-size: 11px; color: #555; margin-top: 5px;"></div>
     </div>
-    <div id="pay-card" class="promo">
+    <div id="pay-card" class="promo-box">
         <h3 style="margin:0">AURA PRO</h3>
-        <p style="font-size: 12px; margin: 10px 0;">Безлимитные запросы и умные ответы без очередей</p>
-        <div style="font-size: 24px; font-weight: 900;">990 ₽ / мес</div>
-        <button class="btn-buy" onclick="openPay()">АКТИВИРОВАТЬ</button>
+        <p style="font-size: 13px; opacity: 0.9; margin: 10px 0;">Безлимит и более точные ответы</p>
+        <div style="font-size: 24px; font-weight: 800;">990 ₽ / мес</div>
+        <button class="btn-pro" onclick="openPay()">АКТИВИРОВАТЬ</button>
     </div>
-    <button onclick="if(confirm('Очистить историю?')){localStorage.clear(); location.reload();}" style="margin-top: 30px; width:100%; background:none; border:1px solid #333; color:#555; padding:12px; border-radius:12px; font-size: 12px;">Сбросить настройки и кэш</button>
+    <button onclick="if(confirm('Очистить кэш?')){localStorage.clear(); location.reload();}" style="margin-top: auto; background: none; border: 1px solid #333; color: #555; padding: 12px; border-radius: 10px;">Сбросить приложение</button>
 </div>
 
 <nav>
-    <div class="nav-link active" id="n-chat" onclick="show('chat')"><i>💬</i>Чат</div>
-    <div class="nav-link" id="n-tools" onclick="show('tools')"><i>🛠</i>Задачи</div>
-    <div class="nav-link" id="n-profile" onclick="show('profile')"><i>👤</i>Профиль</div>
+    <div class="nav-item active" id="n-chat" onclick="tab('chat')"><i>💬</i>Чат</div>
+    <div class="nav-item" id="n-tools" onclick="tab('tools')"><i>🛠</i>Задачи</div>
+    <div class="nav-item" id="n-profile" onclick="tab('profile')"><i>👤</i>Профиль</div>
 </nav>
 
 <script>
-    // === КОНФИГ КЛЮЧЕЙ ===
+    // === КОНФИГУРАЦИЯ (ВСТАВЬ СВОЕ) ===
     const S_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const S_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const D_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
@@ -114,34 +168,30 @@
 
     let uId = localStorage.getItem('aura_id') || ('u'+Math.random().toString(36).substr(2,7));
     localStorage.setItem('aura_id', uId);
-    document.getElementById('id-info').innerText = "ID: " + uId;
+    document.getElementById('id-display').innerText = "ID: " + uId;
     
     let mCount = parseInt(localStorage.getItem('aura_c') || '0');
     let isPro = false;
 
-    function show(name) {
+    // ПЕРЕКЛЮЧЕНИЕ ТАБОВ
+    function tab(name) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('screen-' + name).classList.add('active');
         document.getElementById('n-' + name).classList.add('active');
     }
 
-    function quickTask(p) { 
-        show('chat'); 
-        const input = document.getElementById('user-msg');
-        input.value = p;
-        input.focus();
-    }
+    function quick(p) { tab('chat'); document.getElementById('user-msg').value = p; document.getElementById('user-msg').focus(); }
 
-    // ГЕОЛОКАЦИЯ И ПОГОДА
+    // ГЕОЛОКАЦИЯ
     async function initWeather() {
-        const weatherEl = document.getElementById('weather');
-        const fetchW = async (lat, lon, city) => {
+        const el = document.getElementById('weather');
+        const update = async (lat, lon, city) => {
             try {
                 const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const d = await r.json();
-                weatherEl.innerText = `${city}: ${Math.round(d.current_weather.temperature)}°C`;
-            } catch(e) { weatherEl.innerText = "Москва: --°C"; }
+                el.innerText = `${city}: ${Math.round(d.current_weather.temperature)}°C`;
+            } catch(e) { el.innerText = "Москва: --°C"; }
         };
 
         if (navigator.geolocation) {
@@ -150,43 +200,24 @@
                 try {
                     const g = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
                     const gd = await g.json();
-                    const city = gd.address.city || gd.address.town || "Локация";
-                    fetchW(latitude, longitude, city);
-                } catch(e) { fetchW(latitude, longitude, "Мой город"); }
-            }, () => fetchW(55.75, 37.61, "Москва"), {timeout: 5000});
-        } else fetchW(55.75, 37.61, "Москва");
+                    update(latitude, longitude, gd.address.city || gd.address.town || "Локация");
+                } catch(e) { update(latitude, longitude, "Город"); }
+            }, () => update(55.75, 37.61, "Москва"), {timeout: 5000});
+        } else update(55.75, 37.61, "Москва");
     }
 
-    // ПОИСК ПОГОДЫ В МИРЕ ДЛЯ ЧАТА
-    async function searchWorldWeather(text) {
-        const match = text.match(/(?:погода|температура)\s+(?:в|во)\s+([а-яА-Яa-zA-Z-\s]+)/i);
-        if (match && match[1]) {
-            try {
-                const g = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(match[1])}&format=json&limit=1`);
-                const gd = await g.json();
-                if (gd.length > 0) {
-                    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${gd[0].lat}&longitude=${gd[0].lon}&current_weather=true`);
-                    const wd = await w.json();
-                    return ` (ДАННЫЕ: В ${gd[0].display_name} сейчас ${wd.current_weather.temperature}°C).`;
-                }
-            } catch(e) {}
-        }
-        return "";
-    }
-
-    // ОТПРАВКА СООБЩЕНИЯ
+    // ЧАТ
     async function sendMessage() {
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
         if(!text) return;
-        if(mCount >= 10 && !isPro) { alert("Лимит бесплатных запросов! Активируйте PRO."); show('profile'); return; }
+        if(mCount >= 10 && !isPro) { alert("Лимит исчерпан!"); tab('profile'); return; }
 
         addB(text, 'user');
         input.value = 'Анализирую...';
 
-        const localW = document.getElementById('weather').innerText;
-        const worldW = await searchWorldWeather(text);
-        const sys = `Ты Aura AI. Сейчас 15.02.2026. Погода у юзера: ${localW}.${worldW} Отвечай кратко.`;
+        const weatherState = document.getElementById('weather').innerText;
+        const system = `Ты Aura AI. Сегодня 15.02.2026. Погода: ${weatherState}. Отвечай полезно и кратко.`;
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -194,15 +225,15 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${D_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat",
-                    messages: [{role:"system", content:sys}, {role:"user", content:text}]
+                    messages: [{role:"system", content:system}, {role:"user", content:text}]
                 })
             });
             const data = await res.json();
             addB(data.choices[0].message.content, 'ai');
             mCount++;
             localStorage.setItem('aura_c', mCount);
-            updateStatus();
-        } catch(e) { addB("Ошибка API. Проверьте баланс ключа или интернет.", 'ai'); }
+            updStatus();
+        } catch(e) { addB("Сбой связи. Попробуйте позже.", "ai"); }
         input.value = '';
     }
 
@@ -210,29 +241,16 @@
         const f = document.getElementById('chat-flow');
         const b = document.createElement('div');
         b.className = `bubble ${c}`; b.innerText = t;
-        f.appendChild(b); f.scrollTop = f.scrollHeight;
+        f.appendChild(b);
+        f.scrollTop = f.scrollHeight;
     }
 
-    function updateStatus() { if(!isPro) document.getElementById('status-txt').innerText = `Запросов: ${mCount}/5 (Free)`; }
+    function updStatus() { if(!isPro) document.getElementById('status-txt').innerText = `Запросов: ${mCount}/10 (Free)`; }
     
-    async function checkP() {
-        try {
-            const res = await fetch(`${S_URL}/rest/v1/payments?user_id=eq.${uId}&status=eq.success`, {
-                headers: { 'apikey': S_KEY, 'Authorization': `Bearer ${S_KEY}` }
-            });
-            const d = await res.json();
-            if(d.length > 0) {
-                isPro = true;
-                document.getElementById('status-txt').innerText = "Статус: Aura PRO";
-                document.getElementById('pay-card').style.display = 'none';
-            }
-        } catch(e){}
-    }
-
-    function openPay() { if(P_LINK.includes('http')) window.location.href = P_LINK; else alert("Ошибка ссылки"); }
+    function openPay() { window.location.href = P_LINK; }
     function checkNet() { document.getElementById('offline-screen').style.display = navigator.onLine ? 'none' : 'flex'; }
 
-    window.onload = () => { checkNet(); initWeather(); checkP(); updateStatus(); };
+    window.onload = () => { checkNet(); initWeather(); updStatus(); };
     window.addEventListener('online', checkNet);
     window.addEventListener('offline', checkNet);
 </script>
