@@ -177,25 +177,36 @@
         container.scrollTop = container.scrollHeight;
     }
 
-    async function sendToAI() {
+  async function sendToAI() {
         const input = document.getElementById('user-input');
         const text = input.value.trim();
         
+        // Проверка сети
         if (!navigator.onLine) {
-            updateNetworkStatus(); // Показать заглушку если сети нет
+            updateNetworkStatus(); 
             return;
         }
 
         if (!text) return;
 
+        // Проверка лимитов
         if (messageCount >= 3 && !isPro) {
             alert("Лимит исчерпан. Пожалуйста, активируйте Aura Pro.");
             return;
         }
 
+        // Добавляем сообщение юзера в историю
         history.push({role: 'user', text: text});
         renderHistory();
         input.value = "...";
+
+        // === ГЛАВНОЕ ИЗМЕНЕНИЕ ===
+        // Берем текст погоды прямо с верхней плашки сайта
+        const currentWeather = document.getElementById('weather-text').innerText;
+        
+        // Формируем "Системную инструкцию" для бота
+        const systemMessage = `Ты Aura AI, умный ассистент. Твои ответы краткие и полезные. Текущие данные: ${currentWeather}. Если спросят о погоде — используй эти данные.`;
+        // =========================
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -203,9 +214,21 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat", 
-                    messages: [{role: "system", content: "Ты Aura AI, помощник."}, {role: "user", content: text}]
+                    messages: [
+                        {role: "system", content: systemMessage}, // Передаем погоду боту!
+                        {role: "user", content: text}
+                    ]
                 })
             });
+            const data = await res.json();
+            history.push({role: 'ai', text: data.choices[0].message.content});
+            messageCount++;
+            localStorage.setItem('aura_count', messageCount);
+            localStorage.setItem('aura_history', JSON.stringify(history));
+            renderHistory();
+        } catch (e) { alert("Ошибка API."); }
+        input.value = "";
+    }
             const data = await res.json();
             history.push({role: 'ai', text: data.choices[0].message.content});
             messageCount++;
