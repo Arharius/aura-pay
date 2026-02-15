@@ -3,155 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI App</title>
+    <title>Aura AI</title>
     <style>
-        :root {
-            --bg: #0f0c29;
-            --accent: #00d2ff;
-            --pro: #da22ff;
-            --text: #ffffff;
-            --nav-bg: #161b33;
+        :root { --bg: #0f0c29; --accent: #00d2ff; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+
+        /* ЭКРАН ОФЛАЙН - ТЕПЕРЬ ОН ГЛАВНЫЙ ПРИ ЗАГРУЗКЕ */
+        #blocker { 
+            display: flex; /* Показываем сразу */
+            position: fixed; inset: 0; background: var(--bg); z-index: 10000; 
+            flex-direction: column; align-items: center; justify-content: center; 
+            text-align: center; padding: 30px; 
         }
 
-        body {
-            background: var(--bg);
-            background-image: linear-gradient(315deg, #0f0c29 0%, #302b63 74%);
-            color: var(--text); font-family: -apple-system, system-ui, sans-serif;
-            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        /* ЭКРАНЫ */
-        .screen {
-            flex-grow: 1; display: none; flex-direction: column;
-            padding: 20px; padding-bottom: 80px; overflow-y: auto; box-sizing: border-box;
-        }
+        .screen { flex-grow: 1; display: none; flex-direction: column; padding: 20px; padding-bottom: 80px; overflow-y: auto; }
         .active { display: flex; }
 
-        /* HEADER */
-        header {
-            padding: 15px 20px; background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        header h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+        header { padding: 15px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
         .weather-pill { background: rgba(0,210,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); }
 
-        /* ЧАТ */
         #chat-flow { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; margin-bottom: 10px; }
-        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 20px; font-size: 14px; line-height: 1.5; }
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 20px; font-size: 14px; }
         .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); }
         .ai { align-self: flex-start; background: rgba(255,255,255,0.1); }
 
         .input-group { display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px; }
-        input { flex-grow: 1; background: transparent; border: none; color: white; outline: none; font-size: 14px; }
-        .send-circle { width: 35px; height: 35px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        input { flex-grow: 1; background: transparent; border: none; color: white; outline: none; }
+        .send-circle { width: 35px; height: 35px; border-radius: 50%; background: var(--accent); border: none; color: #000; font-weight: bold; }
 
-        /* КАРТОЧКИ ИНСТРУМЕНТОВ */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-        .card { 
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 18px; padding: 15px; text-align: center; transition: 0.3s;
-        }
-        .card:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
-        .card i { font-size: 24px; display: block; margin-bottom: 8px; }
-        .card span { font-size: 12px; font-weight: 600; color: #ccc; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 15px; text-align: center; }
+        
+        .promo-box { background: linear-gradient(135deg, #da22ff, #9733ee); padding: 20px; border-radius: 20px; text-align: center; margin-top: 20px; }
+        .buy-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: white; color: #9733ee; font-weight: 800; margin-top: 15px; }
 
-        /* ПРОФИЛЬ */
-        .promo-box {
-            background: linear-gradient(135deg, #da22ff, #9733ee);
-            padding: 20px; border-radius: 20px; text-align: center; margin-top: 20px;
-        }
-        .buy-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: white; color: #9733ee; font-weight: 800; font-size: 14px; margin-top: 15px; }
-
-        /* НАВИГАЦИЯ (TAB BAR) */
-        nav {
-            position: fixed; bottom: 0; width: 100%; height: 65px;
-            background: var(--nav-bg); display: flex; justify-content: space-around;
-            align-items: center; border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .nav-link { color: #666; text-align: center; font-size: 10px; text-decoration: none; cursor: pointer; }
+        nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #161b33; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .nav-link { color: #666; text-align: center; font-size: 10px; cursor: pointer; }
         .nav-link.active { color: var(--accent); }
         .nav-link i { font-size: 20px; display: block; margin-bottom: 4px; }
-
-        /* ЗАГЛУШКА БЛОКИРОВКИ */
-        #blocker { display: flex; position: fixed; inset: 0; background: var(--bg); z-index: 10000; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 30px; }
     </style>
 </head>
 <body>
 
 <div id="blocker">
-    <div style="font-size: 50px;">📡</div>
-    <h2>Нет интернета</h2>
-    <p>Для работы Aura AI требуется стабильное подключение к сети.</p>
-    <button onclick="location.reload()" style="padding: 12px 25px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold;">ОБНОВИТЬ</button>
+    <div style="font-size: 60px; margin-bottom: 20px;">📡</div>
+    <h2 id="status-title">Проверка связи...</h2>
+    <p id="status-desc">Пожалуйста, подождите.</p>
+    <button id="retry-btn" onclick="location.reload()" style="display:none; padding: 12px 25px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold; color: #000;">ОБНОВИТЬ СТРАНИЦУ</button>
 </div>
 
-<header>
+<header id="app-header" style="display:none;">
     <h1>AURA AI</h1>
-    <div id="weather" class="weather-pill">Загрузка...</div>
+    <div id="weather" class="weather-pill">Москва: --°C</div>
 </header>
 
-<div id="screen-chat" class="screen active">
+<div id="screen-chat" class="screen">
     <div id="chat-flow">
-        <div class="bubble ai">Привет! Я твой персональный ассистент Aura. О чем хочешь поговорить?</div>
+        <div class="bubble ai">Привет! Я Aura AI. Чем могу помочь сегодня?</div>
     </div>
     <div class="input-group">
-        <input type="text" id="user-msg" placeholder="Спроси о чем угодно...">
+        <input type="text" id="user-msg" placeholder="Напишите сообщение...">
         <button class="send-circle" onclick="sendMessage()">➤</button>
     </div>
 </div>
 
 <div id="screen-tools" class="screen">
-    <h2 style="font-size: 20px;">Инструменты</h2>
-    <p style="color: #888; font-size: 13px;">Выберите готовую задачу для ИИ</p>
+    <h2>Инструменты</h2>
     <div class="grid">
-        <div class="card" onclick="quickTask('Напиши текст для поста в соцсети на тему: ')"><i>📝</i><span>Пост для соцсетей</span></div>
-        <div class="card" onclick="quickTask('Переведи на английский следующий текст: ')"><i>🌍</i><span>Переводчик</span></div>
-        <div class="card" onclick="quickTask('Придумай 5 идей подарка для: ')"><i>🎁</i><span>Идеи подарков</span></div>
-        <div class="card" onclick="quickTask('Исправь грамматические ошибки в тексте: ')"><i>✅</i><span>Корректор</span></div>
-        <div class="card" onclick="quickTask('Составь меню на день с рецептами для: ')"><i>🥗</i><span>План питания</span></div>
-        <div class="card" onclick="quickTask('Напиши план тренировки на сегодня: ')"><i>💪</i><span>Фитнес-план</span></div>
+        <div class="card" onclick="quickTask('Напиши пост в соцсети: ')"><i>📝</i><br><span>Пост</span></div>
+        <div class="card" onclick="quickTask('Переведи на английский: ')"><i>🌍</i><br><span>Перевод</span></div>
+        <div class="card" onclick="quickTask('Идеи подарка для: ')"><i>🎁</i><br><span>Подарки</span></div>
+        <div class="card" onclick="quickTask('Исправь ошибки в тексте: ')"><i>✅</i><br><span>Корректор</span></div>
     </div>
 </div>
 
 <div id="screen-profile" class="screen">
-    <h2 style="font-size: 20px;">Мой профиль</h2>
-    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-top: 10px;">
-        <span style="color: #888; font-size: 12px;">Статус:</span>
-        <div id="status-txt" style="font-weight: bold; margin-top: 5px;">Бесплатная версия (3/3)</div>
+    <h2>Профиль</h2>
+    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;">
+        <div id="status-txt" style="font-weight: bold;">Версия: Free</div>
     </div>
-
     <div id="pay-card" class="promo-box">
-        <h3 style="margin:0">AURA PRO</h3>
-        <p style="font-size: 12px; opacity: 0.9;">Разблокируйте безлимитное общение и приоритетные ответы от ИИ.</p>
-        <div style="font-size: 22px; font-weight: 900;">990 ₽ / мес</div>
+        <h3>AURA PRO</h3>
+        <div style="font-size: 22px; font-weight: 900; margin: 10px 0;">990 ₽ / мес</div>
         <button class="buy-btn" onclick="openPayment()">АКТИВИРОВАТЬ</button>
     </div>
-    
-    <button onclick="localStorage.clear(); location.reload();" style="margin-top: 20px; width: 100%; background: none; border: 1px solid #444; color: #888; padding: 10px; border-radius: 10px; font-size: 12px;">Очистить кэш и историю</button>
-    <p style="text-align: center; font-size: 10px; color: #555; margin-top: 20px;">ИП Шкуренко Андрей Александрович</p>
+    <button onclick="localStorage.clear(); location.reload();" style="margin-top: 30px; width:100%; background:none; border:1px solid #444; color:#666; padding:10px; border-radius:10px;">Сбросить всё</button>
 </div>
 
-<nav>
+<nav id="app-nav" style="display:none;">
     <div class="nav-link active" id="nav-chat" onclick="showScreen('chat')"><i>💬</i>Чат</div>
-    <div class="nav-link" id="nav-tools" onclick="showScreen('tools')"><i>🛠</i>Задачи</div>
+    <div class="nav-item nav-link" id="nav-tools" onclick="showScreen('tools')"><i>🛠</i>Задачи</div>
     <div class="nav-link" id="nav-profile" onclick="showScreen('profile')"><i>👤</i>Профиль</div>
 </nav>
 
 <script>
-    // === ВСТАВЬ КЛЮЧИ ===
+    // ВСТАВЬ КЛЮЧИ!
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
     const PAYMENT_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
-    // ====================
 
     let userId = localStorage.getItem('aura_id') || ('u'+Math.random().toString(36).substr(2,7));
     localStorage.setItem('aura_id', userId);
     let msgCount = parseInt(localStorage.getItem('aura_c') || '0');
     let isPro = false;
 
-    // ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
+    // --- ЛОГИКА ЗАГЛУШКИ ---
+    function checkConnection() {
+        const blocker = document.getElementById('blocker');
+        const header = document.getElementById('app-header');
+        const nav = document.getElementById('app-nav');
+        const retryBtn = document.getElementById('retry-btn');
+        const title = document.getElementById('status-title');
+        const desc = document.getElementById('status-desc');
+
+        if (navigator.onLine) {
+            // ИНТЕРНЕТ ЕСТЬ -> Скрываем заглушку
+            blocker.style.display = 'none';
+            header.style.display = 'flex';
+            nav.style.display = 'flex';
+            showScreen('chat');
+            updateWeather();
+            checkStatus();
+        } else {
+            // ИНТЕРНЕТА НЕТ -> Показываем ошибку
+            blocker.style.display = 'flex';
+            title.innerText = "Офлайн-режим";
+            title.style.color = "#ff4b2b";
+            desc.innerText = "Приложение Aura AI требует подключения к интернету.";
+            retryBtn.style.display = "block";
+        }
+    }
+
+    // Запускаем проверку через 1 секунду после загрузки (чтобы не моргало)
+    window.onload = () => {
+        setTimeout(checkConnection, 800);
+        updateStatusText();
+    };
+
+    // Слушаем изменение сети
+    window.addEventListener('online', checkConnection);
+    window.addEventListener('offline', checkConnection);
+
+    // ОСТАЛЬНЫЕ ФУНКЦИИ
     function showScreen(name) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
@@ -159,24 +153,8 @@
         document.getElementById('nav-' + name).classList.add('active');
     }
 
-    // БЫСТРЫЕ ЗАДАЧИ
-    function quickTask(prompt) {
-        showScreen('chat');
-        document.getElementById('user-msg').value = prompt;
-        document.getElementById('user-msg').focus();
-    }
+    function quickTask(p) { showScreen('chat'); document.getElementById('user-msg').value = p; }
 
-    // СЕТЬ
-    function checkNet() {
-        if (navigator.onLine) {
-            document.getElementById('blocker').style.display = 'none';
-            updateWeather();
-            checkStatus();
-        }
-    }
-    setInterval(checkNet, 2000);
-
-    // ПОГОДА
     async function updateWeather() {
         try {
             const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true');
@@ -185,20 +163,19 @@
         } catch(e) {}
     }
 
-    // ЧАТ
     async function sendMessage() {
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
-        if(!text || !navigator.onLine) return;
+        if(!text) return;
 
         if(msgCount >= 3 && !isPro) {
-            alert("Лимит сообщений исчерпан. Перейдите в профиль для покупки PRO.");
+            alert("Лимит исчерпан. Перейдите в профиль.");
             showScreen('profile');
             return;
         }
 
         addBubble(text, 'user');
-        input.value = '...';
+        input.value = 'Жду ответ...';
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -206,7 +183,7 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat",
-                    messages: [{role:"system", content:"Ты Aura AI, мобильный помощник."}, {role:"user", content:text}]
+                    messages: [{role:"system", content:"Ты Aura AI."}, {role:"user", content:text}]
                 })
             });
             const data = await res.json();
@@ -214,24 +191,23 @@
             msgCount++;
             localStorage.setItem('aura_c', msgCount);
             updateStatusText();
-        } catch(e) { alert("Ошибка связи с ИИ"); }
+        } catch(e) { alert("Ошибка!"); }
         input.value = '';
     }
 
-    function addBubble(txt, type) {
-        const flow = document.getElementById('chat-flow');
+    function addBubble(t, cl) {
+        const f = document.getElementById('chat-flow');
         const b = document.createElement('div');
-        b.className = `bubble ${type}`;
-        b.innerText = txt;
-        flow.appendChild(b);
-        flow.scrollTop = flow.scrollHeight;
+        b.className = `bubble ${cl}`;
+        b.innerText = t;
+        f.appendChild(b);
+        f.scrollTop = f.scrollHeight;
     }
 
     function updateStatusText() {
-        if(!isPro) document.getElementById('status-txt').innerText = `Бесплатная версия (${3-msgCount < 0 ? 0 : 3-msgCount}/3 запроса)`;
+        if(!isPro) document.getElementById('status-txt').innerText = `Версия: Free (${3-msgCount < 0 ? 0 : 3-msgCount} ост.)`;
     }
 
-    // ПРОВЕРКА ОПЛАТЫ
     async function checkStatus() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${userId}&status=eq.success`, {
@@ -240,15 +216,13 @@
             const data = await res.json();
             if(data.length > 0) {
                 isPro = true;
-                document.getElementById('status-txt').innerText = "Aura PRO активна";
+                document.getElementById('status-txt').innerText = "Версия: Aura PRO";
                 document.getElementById('pay-card').style.display = 'none';
             }
         } catch(e){}
     }
 
     function openPayment() { window.location.href = PAYMENT_LINK; }
-
-    window.onload = () => { checkNet(); updateStatusText(); };
 </script>
 </body>
 </html>
