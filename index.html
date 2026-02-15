@@ -60,6 +60,11 @@
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 10px;">
         <h1>Aura AI</h1>
+        <div id="yandex-weather" style="margin: 10px 0; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.05); height: 64px;">
+    <iframe src="https://yandex.ru/time/widget/?geoid=213&lang=ru&layout=horiz&type=weather" 
+            width="100%" height="64" frameborder="0" scrolling="no" style="pointer-events: none;">
+    </iframe>
+</div>
         <button onclick="clearHistory()" style="background:none; border:none; color:#ff4b2b; font-size:10px;">ОЧИСТИТЬ</button>
     </div>
 
@@ -163,13 +168,20 @@
     }
 
     async function sendToAI() {
-        const input = document.getElementById('user-input');
-        const text = input.value.trim();
-        if (!text || !navigator.onLine) return;
-        if (messageCount >= 3 && !isPro) {
-            alert("Лимит достигнут. Оплатите PRO.");
-            return;
-        }
+body: JSON.stringify({
+    model: "deepseek-chat", 
+    messages: [
+        {
+            role: "system", 
+            content: `Ты — Aura AI, продвинутый ассистент с характером. 
+            Твои правила:
+            1. Никогда не говори 'Я не могу предоставить информацию о погоде'. 
+            2. Если пользователь спрашивает о погоде, посмотри на виджет выше или ответь в стиле: 'Судя по моим датчикам, в Москве сейчас типичная погода для этого времени года. Подробности прямо над нашим чатом!' 
+            3. Будь лаконичным, живым и полезным. Никаких скучных списков 'рекомендуемых сайтов'.`
+        }, 
+        {role: "user", content: text}
+    ]
+})
 
         history.push({role: 'user', text: text});
         renderHistory();
