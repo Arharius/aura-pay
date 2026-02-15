@@ -89,11 +89,11 @@
 </div>
 
 <script>
-    // === КОНФИГУРАЦИЯ (ВСТАВЬ СВОИ КЛЮЧИ) ===
+    // === КОНФИГУРАЦИЯ ===
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
-    const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; // Из настроек API в Supabase
-    const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58'; // Из кабинета DeepSeek
-    // =======================================
+    const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; // Тот, что ты брал в Supabase Settings -> API
+    const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
+    // ====================
 
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('aura_user_id', userId);
@@ -101,7 +101,7 @@
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
     let isPro = false;
 
-    // ПРОВЕРКА СЕТИ (Инвертированная логика: контент скрыт, пока не подтвержден онлайн)
+    // ЗАГЛУШКА (Offline)
     function checkNetwork() {
         const overlay = document.getElementById('offline-screen');
         const content = document.getElementById('app-content');
@@ -113,9 +113,18 @@
             content.style.display = 'none';
         }
     }
-    // Проверка каждую секунду для модератора
     setInterval(checkNetwork, 1000);
 
+    // ПОГОДА
+    async function updateWeather() {
+        try {
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true');
+            const data = await res.json();
+            document.getElementById('weather-text').innerText = `📍 Москва: ${Math.round(data.current_weather.temperature)}°C.`;
+        } catch(e) { document.getElementById('weather-text').innerText = "📍 Погода недоступна"; }
+    }
+
+    // ПРОВЕРКА PRO СТАТУСА
     async function checkProStatus() {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${userId}&status=eq.success`, {
@@ -130,10 +139,11 @@
         } catch (e) { console.log("DB check skip"); }
     }
 
+    // ЧАТ
     function renderHistory() {
         const container = document.getElementById('chat-container');
         if (history.length === 0) {
-            container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Чем могу помочь?</div>';
+            container.innerHTML = '<div class="msg msg-ai">Привет! Я Aura AI. Чем помочь?</div>';
         } else {
             container.innerHTML = history.map(m => `<div class="msg ${m.role === 'user' ? 'msg-user' : 'msg-ai'}">${m.text}</div>`).join('');
         }
@@ -146,13 +156,13 @@
         if (!text || !navigator.onLine) return;
 
         if (messageCount >= 3 && !isPro) {
-            alert("Бесплатный лимит исчерпан. Пожалуйста, активируйте Aura Pro.");
+            alert("Лимит исчерпан. Пожалуйста, активируйте Aura Pro.");
             return;
         }
 
         history.push({role: 'user', text: text});
         renderHistory();
-        input.value = "Обработка...";
+        input.value = "...";
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -160,7 +170,7 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat", 
-                    messages: [{role: "system", content: "Ты Aura AI, лаконичный помощник."}, {role: "user", content: text}]
+                    messages: [{role: "system", content: "Ты Aura AI."}, {role: "user", content: text}]
                 })
             });
             const data = await res.json();
@@ -173,11 +183,41 @@
         input.value = "";
     }
 
+    // === НОВАЯ ОПЛАТА ЧЕРЕЗ ТВОЮ ФУНКЦИЮ ===
+    async function initPayment() {
+        const btn = document.querySelector('#pricing button');
+        btn.innerText = "Загрузка...";
+        
+        try {
+            // Ссылка на твою функцию в Supabase (проверь, нет ли опечатки в 'ookassa')
+            const res = await fetch('https://tgumghgowexcuzlnqnoa.supabase.co/functions/v1/ookassa-pay', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + SUPABASE_KEY 
+                },
+                body: JSON.stringify({ userId: userId, amount: '990.00' })
+            });
+
+            const data = await res.json();
+            if (data.confirmation && data.confirmation.confirmation_url) {
+                window.location.href = data.confirmation.confirmation_url;
+            } else {
+                alert("Ошибка создания платежа");
+                btn.innerText = "Активировать";
+            }
+        } catch (e) {
+            alert("Ошибка сети");
+            btn.innerText = "Активировать";
+        }
+    }
+
     function clearHistory() { if(confirm("Очистить?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
         checkNetwork();
         renderHistory();
+        updateWeather();
         checkProStatus();
     };
 </script>
