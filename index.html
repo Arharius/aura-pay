@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aura AI — Персональный ассистент</title>
-    <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
     <style>
         body {
             background-color: #0f0c29;
@@ -15,7 +14,7 @@
         .container { max-width: 600px; margin: 0 auto; width: 100%; display: none; flex-direction: column; flex-grow: 1; }
         h1 { font-size: 24px; margin: 0; background: linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
         
-        /* ЭКРАН ОФЛАЙНА (Виден всегда, если нет сети) */
+        /* ЗАГЛУШКА ОФЛАЙН (Главное требование RuStore) */
         #offline-screen {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f0c29; z-index: 10000; flex-direction: column; align-items: center; 
@@ -38,6 +37,9 @@
         .input-area { background: rgba(255,255,255,0.08); border-radius: 22px; padding: 15px; margin-bottom: 15px; }
         textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; resize: none; outline: none; min-height: 44px; }
         .btn-send { background: #9733ee; color: white; border: none; padding: 10px 22px; border-radius: 14px; font-weight: bold; cursor: pointer; }
+        
+        /* Стили для кнопки загрузки */
+        .btn-send:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .pricing-card {
             background: linear-gradient(135deg, rgba(151, 51, 238, 0.1), rgba(218, 34, 255, 0.1));
@@ -52,7 +54,7 @@
 <div id="offline-screen">
     <div style="font-size: 80px; margin-bottom: 20px;">📡</div>
     <h1 style="color: #ff4b2b; margin: 0;">НЕТ СВЯЗИ</h1>
-    <p style="color: #fff; padding: 0 40px; margin: 15px 0 25px;">Приложению Aura AI требуется интернет. Пожалуйста, проверьте соединение.</p>
+    <p style="color: #fff; padding: 0 40px; margin: 15px 0 25px;">Приложению Aura AI требуется интернет. Проверьте соединение.</p>
     <button class="btn-send" onclick="location.reload()">ОБНОВИТЬ</button>
 </div>
 
@@ -63,7 +65,7 @@
     </div>
 
     <div class="weather-banner">
-        <div id="weather-text">📍 Москва: -10°C. Хорошее время для общения!</div>
+        <div id="weather-text">📍 Определение погоды...</div>
     </div>
 
     <div id="chat-container"></div>
@@ -79,7 +81,7 @@
     <div class="pricing-card" id="pricing">
         <h3 style="margin:0; font-size:16px;">Тариф Aura Pro</h3>
         <div style="font-size:24px; font-weight:900; color:#da22ff; margin:5px 0;">990 ₽ / мес</div>
-        <button class="btn-send" style="width:100%;" onclick="alert('Модуль оплаты активируется банком...')">Активировать</button>
+        <button class="btn-send" style="width:100%;" onclick="initPayment()">Активировать PRO</button>
     </div>
 
     <footer>
@@ -89,11 +91,11 @@
 </div>
 
 <script>
-    // === КОНФИГУРАЦИЯ ===
+    // === ВСТАВЬ СВОИ КЛЮЧИ ТУТ ===
     const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
-    const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; // Тот, что ты брал в Supabase Settings -> API
+    const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const DEEPSEEK_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
-    // ====================
+    // =============================
 
     let userId = localStorage.getItem('aura_user_id') || ('user_' + Math.random().toString(36).substr(2, 9));
     localStorage.setItem('aura_user_id', userId);
@@ -101,7 +103,7 @@
     let history = JSON.parse(localStorage.getItem('aura_history') || '[]');
     let isPro = false;
 
-    // ЗАГЛУШКА (Offline)
+    // ПРОВЕРКА СЕТИ (Offline Заглушка)
     function checkNetwork() {
         const overlay = document.getElementById('offline-screen');
         const content = document.getElementById('app-content');
@@ -136,7 +138,7 @@
                 document.getElementById('pricing').style.display = 'none';
                 document.getElementById('role-display').innerText += ' (PRO)';
             }
-        } catch (e) { console.log("DB check skip"); }
+        } catch (e) { console.log("Status check skipped"); }
     }
 
     // ЧАТ
@@ -170,7 +172,7 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat", 
-                    messages: [{role: "system", content: "Ты Aura AI."}, {role: "user", content: text}]
+                    messages: [{role: "system", content: "Ты Aura AI, помощник."}, {role: "user", content: text}]
                 })
             });
             const data = await res.json();
@@ -183,32 +185,44 @@
         input.value = "";
     }
 
-    // === НОВАЯ ОПЛАТА ЧЕРЕЗ ТВОЮ ФУНКЦИЮ ===
+    // === ФУНКЦИЯ ОПЛАТЫ ЧЕРЕЗ ТВОЙ SUPABASE ===
     async function initPayment() {
         const btn = document.querySelector('#pricing button');
+        const originalText = btn.innerText;
         btn.innerText = "Загрузка...";
-        
+        btn.disabled = true;
+
         try {
-            // Ссылка на твою функцию в Supabase (проверь, нет ли опечатки в 'ookassa')
+            // Обращаемся к твоей Edge-функции (ссылка, которую ты дал)
             const res = await fetch('https://tgumghgowexcuzlnqnoa.supabase.co/functions/v1/ookassa-pay', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + SUPABASE_KEY 
+                    'Authorization': 'Bearer ' + SUPABASE_KEY // Нужен ключ Supabase
                 },
-                body: JSON.stringify({ userId: userId, amount: '990.00' })
+                body: JSON.stringify({ 
+                    userId: userId, 
+                    amount: '990.00' 
+                })
             });
 
+            if (!res.ok) throw new Error('Ошибка сервера');
+
             const data = await res.json();
+
+            // Если пришла ссылка на оплату — открываем её
             if (data.confirmation && data.confirmation.confirmation_url) {
                 window.location.href = data.confirmation.confirmation_url;
             } else {
-                alert("Ошибка создания платежа");
-                btn.innerText = "Активировать";
+                alert("Не удалось создать платеж. Проверьте ключи в Edge Function.");
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         } catch (e) {
-            alert("Ошибка сети");
-            btn.innerText = "Активировать";
+            alert("Ошибка соединения. Проверьте консоль.");
+            console.error(e);
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
     }
 
