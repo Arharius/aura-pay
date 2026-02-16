@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aura AI Pro Assistant</title>
+    <title>Aura AI Assistant</title>
     <style>
         :root { --bg: #0f0c29; --accent: #00d2ff; --nav-h: 70px; --card-bg: rgba(255,255,255,0.07); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -16,13 +16,14 @@
 
         .app-container { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; padding-top: env(safe-area-inset-top); }
         header { height: 60px; padding: 0 20px; flex-shrink: 0; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        
         .main-content { flex: 1; overflow-y: auto; position: relative; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
         .screen { display: none; flex-direction: column; padding: 20px; width: 100%; }
         .active { display: flex; }
 
         /* ЧАТ */
         #chat-flow { flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 160px; }
-        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
         .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); border-bottom-right-radius: 4px; }
         .ai { align-self: flex-start; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
 
@@ -30,7 +31,7 @@
         .input-container { display: flex; gap: 10px; background: #1e2240; padding: 5px 15px; border-radius: 25px; align-items: center; height: 50px; }
         input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 16px; }
 
-        /* ИНСТРУМЕНТЫ */
+        /* ГРИД ИНСТРУМЕНТОВ */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 100px; }
         .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px 15px; text-align: left; }
         .card i { font-size: 24px; font-style: normal; margin-bottom: 10px; display: block; }
@@ -44,7 +45,7 @@
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; font-style: normal; }
 
         .promo-box { background: linear-gradient(135deg, #da22ff, #9733ee); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
-        .weather-pill { background: rgba(0,210,255,0.15); padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; }
+        .weather-pill { background: rgba(0,210,255,0.1); padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -64,43 +65,45 @@
     <div class="main-content" id="scroll-area">
         <div id="screen-chat" class="screen active">
             <div id="chat-flow">
-                <div class="bubble ai">Привет! Я Aura. Чем могу быть полезна сегодня?</div>
+                <div class="bubble ai">Привет! Я Aura. Лаборатория AI готова к работе. Что проанализируем сегодня?</div>
             </div>
             <div class="input-wrapper">
                 <div class="input-container">
-                    <input type="text" id="user-msg" placeholder="Ваш вопрос...">
+                    <input type="text" id="user-msg" placeholder="Введите ваш запрос...">
                     <button onclick="sendMessage()" style="background:none; border:none; color:var(--accent); font-size:24px;">➤</button>
                 </div>
             </div>
         </div>
 
         <div id="screen-tools" class="screen">
-            <h2 style="font-size: 20px; margin-bottom: 20px;">Инструменты</h2>
+            <h2 style="font-size: 20px; margin-bottom: 5px;">AI Лаборатория</h2>
+            <p style="color:#888; font-size:12px; margin-bottom:20px;">Специализированные модели для ваших задач</p>
             <div class="grid">
-                <div class="card" onclick="quick('Составь план путешествия: ')"><i>🌍</i><b>Тур-эксперт</b><span>Планы 2.0</span></div>
-                <div class="card" onclick="quick('Придумай рецепт из: ')"><i>🥗</i><b>Шеф-повар</b><span>Умная кухня</span></div>
-                <div class="card" onclick="quick('Напиши код Python для: ')"><i>💻</i><b>Кодинг</b><span>Помощь ИИ</span></div>
-                <div class="card" onclick="quick('Проверь ошибки: ')"><i>✍️</i><b>Корректор</b><span>Стиль текста</span></div>
-                <div class="card" onclick="quick('Перескажи текст: ')"><i>📄</i><b>Аналитика</b><span>Саммари</span></div>
-                <div class="card" onclick="quick('Переведи: ')"><i>🇬🇧</i><b>Переводчик</b><span>Context AI</span></div>
+                <div class="card" onclick="quick('План путешествия: ')"><i>🌍</i><b>Тур-эксперт</b><span>Планы поездок</span></div>
+                <div class="card" onclick="quick('Рецепт блюда: ')"><i>🥗</i><b>Шеф-повар</b><span>Умная кухня</span></div>
+                <div class="card" onclick="quick('Напиши код Python для: ')"><i>💻</i><b>Кодинг</b><span>Помощь в коде</span></div>
+                <div class="card" onclick="quick('Проверь ошибки в тексте: ')"><i>✍️</i><b>Корректор</b><span>Стиль и грамматика</span></div>
+                <div class="card" onclick="quick('Сделай краткий пересказ: ')"><i>📄</i><b>Аналитика</b><span>Саммари</span></div>
+                <div class="card" onclick="quick('Переведи на английский: ')"><i>🇬🇧</i><b>Переводчик</b><span>Context AI</span></div>
             </div>
         </div>
 
         <div id="screen-profile" class="screen">
             <div id="pay-card" class="promo-box">
                 <h3 style="margin:0">Премиум Доступ</h3>
-                <p style="font-size: 12px; margin: 10px 0;">Безлимит и модель DeepSeek-V3</p>
-                <button onclick="openPay()" style="width:100%; padding:14px; border-radius:12px; border:none; background:white; color:#9733ee; font-weight:bold;">КУПИТЬ PRO</button>
+                <p style="font-size: 12px; margin: 10px 0;">Модель DeepSeek-V3 + Безлимит</p>
+                <div style="font-size: 24px; font-weight: 800; margin-bottom: 15px;">990 ₽</div>
+                <button onclick="openPay()" style="width:100%; padding:14px; border-radius:12px; border:none; background:white; color:#9733ee; font-weight:bold; cursor:pointer;">АКТИВИРОВАТЬ PRO</button>
             </div>
             
             <div style="background: var(--card-bg); padding: 15px; border-radius: 15px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span style="color:#888;">Статус:</span>
-                    <span id="status-txt" style="color:var(--accent); font-weight:bold;">Базовый</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
                     <span style="color:#888;">ID:</span>
                     <span id="u-id" style="font-size:12px;">--</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#888;">Статус:</span>
+                    <span id="status-txt" style="color:var(--accent); font-weight:bold;">Базовый</span>
                 </div>
             </div>
         </div>
@@ -114,24 +117,22 @@
 </div>
 
 <script>
-    // === КОНФИГУРАЦИЯ (ВСТАВЬ СВОЕ) ===
+    // === КОНФИГУРАЦИЯ (ОБЯЗАТЕЛЬНО С HTTPS://) ===
     const S_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const S_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const D_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
-    const P_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
+    const P_LINK = 'https://yookassa.ru/my/i/ive_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; // УБЕДИСЬ ЧТО ТУТ HTTPS://
 
     let uId = localStorage.getItem('aura_id') || ('A-' + Math.random().toString(36).substr(2, 5).toUpperCase());
     localStorage.setItem('aura_id', uId);
     document.getElementById('u-id').innerText = uId;
-    
-    let isPro = false;
 
-    // ПРОВЕРКА СЕТИ
-    function checkNet() { document.getElementById('offline-screen').style.display = navigator.onLine ? 'none' : 'flex'; }
+    function checkNet() {
+        document.getElementById('offline-screen').style.display = navigator.onLine ? 'none' : 'flex';
+    }
     window.addEventListener('online', checkNet);
     window.addEventListener('offline', checkNet);
 
-    // ПРОВЕРКА ОПЛАТЫ ЧЕРЕЗ SUPABASE
     async function checkProStatus() {
         try {
             const res = await fetch(`${S_URL}/rest/v1/payments?user_id=eq.${uId}&status=eq.success`, {
@@ -139,14 +140,12 @@
             });
             const data = await res.json();
             if(data.length > 0) {
-                isPro = true;
                 document.getElementById('status-txt').innerText = "Premium PRO";
                 document.getElementById('pay-card').style.display = 'none';
             }
         } catch(e) {}
     }
 
-    // НАВИГАЦИЯ
     function tab(name) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -157,20 +156,19 @@
 
     function quick(p) { tab('chat'); document.getElementById('user-msg').value = p; document.getElementById('user-msg').focus(); }
 
-    // ЧАТ
     async function sendMessage() {
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
         if(!text || !navigator.onLine) return;
         addB(text, 'user');
-        input.value = '...';
+        input.value = 'Aura думает...';
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${D_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat",
-                    messages: [{role:"system", content:"Ты профессиональный ИИ Aura."}, {role:"user", content:text}]
+                    messages: [{role:"system", content:"Ты профессиональный ИИ Aura. Отвечай развернуто."}, {role:"user", content:text}]
                 })
             });
             const data = await res.json();
@@ -187,40 +185,20 @@
         area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
     }
 
-    // БЕЗОПАСНАЯ ОПЛАТА
- function openPay() {
-        // УБЕДИСЬ, ЧТО ТВОЯ ССЫЛКА НАЧИНАЕТСЯ С HTTPS://
-        let payUrl = 'https://yookassa.ru/my/i/live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
-        
-        // Проверка: если вдруг ссылка введена без https, добавляем принудительно
-        if (!payUrl.startsWith('http')) {
-            payUrl = 'https://' + payUrl;
-        }
-
-        if (confirm("Перейти на защищенную страницу оплаты ЮKassa?")) {
-            try {
-                // МЕТОД 1: Прямой переход
-                window.open(payUrl, '_blank', 'location=yes,clearsessioncache=yes,clearcache=yes');
-                
-                // МЕТОД 2: Резервный (если первый заблокирован)
-                const link = document.createElement('a');
-                link.href = payUrl;
-                link.target = '_blank';
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => document.body.removeChild(link), 100);
-            } catch (e) {
-                // Если совсем всё плохо, просто меняем локацию окна
-                window.location.href = payUrl;
-            }
+    // ФИКС ОШИБКИ 404 ПРИ ОПЛАТЕ
+    function openPay() {
+        if (confirm("Открыть страницу безопасной оплаты в браузере?")) {
+            const link = document.createElement('a');
+            link.href = P_LINK;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     }
 
-    window.onload = () => { 
-        checkNet(); 
-        checkProStatus(); // Проверяем статус при запуске
-    };
+    window.onload = () => { checkNet(); checkProStatus(); };
 </script>
 </body>
 </html>
