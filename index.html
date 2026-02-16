@@ -9,7 +9,6 @@
             --bg: #0f0c29; 
             --accent: #00d2ff; 
             --nav-h: 70px; 
-            --input-h: 70px; 
             --card-bg: rgba(255,255,255,0.06);
         }
         
@@ -22,20 +21,23 @@
             overflow: hidden; position: fixed;
         }
 
-        /* ЗАГЛУШКА ОФЛАЙН */
+        /* КОРРЕКТНАЯ ЗАГЛУШКА (ДЛЯ МОДЕРАТОРА) */
         #offline-screen { 
-            display: none; position: fixed; inset: 0; background: var(--bg); 
-            z-index: 99999; flex-direction: column; align-items: center; 
+            display: none; position: fixed; inset: 0; background: #0f0c29; 
+            z-index: 100000; flex-direction: column; align-items: center; 
             justify-content: center; text-align: center; padding: 30px;
         }
-        .offline-icon { font-size: 70px; margin-bottom: 20px; animation: pulse 2s infinite; }
+        .offline-icon { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
         @keyframes pulse {
             0% { opacity: 0.4; transform: scale(0.9); }
             50% { opacity: 1; transform: scale(1); }
             100% { opacity: 0.4; transform: scale(0.9); }
         }
+        .offline-btn {
+            background: var(--accent); color: #000; border: none; padding: 15px 40px;
+            border-radius: 30px; font-weight: bold; margin-top: 25px; box-shadow: 0 5px 20px rgba(0,210,255,0.4);
+        }
 
-        /* ГЛАВНЫЙ КОНТЕЙНЕР */
         .app-container {
             display: flex; flex-direction: column;
             height: 100vh; height: -webkit-fill-available;
@@ -47,9 +49,7 @@
             background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex; justify-content: space-between; align-items: center;
         }
-        header h1 { font-size: 18px; margin: 0; letter-spacing: 1px; }
 
-        /* ОБЛАСТЬ КОНТЕНТА */
         .main-content {
             flex: 1; overflow-y: auto; position: relative;
             display: flex; flex-direction: column;
@@ -60,60 +60,43 @@
         .active { display: flex; }
 
         /* ЧАТ */
-        #chat-flow { 
-            flex: 1; display: flex; flex-direction: column; gap: 12px;
-            padding-bottom: 140px; /* Запас под инпут + навигацию */
-        }
-        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        #chat-flow { flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 150px; }
+        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
         .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); border-bottom-right-radius: 4px; }
         .ai { align-self: flex-start; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
 
-        /* ПОЛЕ ВВОДА (ФИКС ДЛЯ SAMSUNG) */
+        /* ИНПУТ (ФИКС ДЛЯ SAMSUNG) */
         .input-wrapper {
             position: fixed; bottom: var(--nav-h); left: 0; right: 0;
-            padding: 10px 15px; background: #0f0c29;
+            padding: 10px 15px; background: #0f0c29; z-index: 500;
             border-top: 1px solid rgba(255,255,255,0.05);
-            z-index: 500;
         }
         .input-container { 
-            display: flex; gap: 10px; background: #1e2240; 
-            padding: 5px 15px; border-radius: 25px; align-items: center;
-            height: 50px; border: 1px solid rgba(255,255,255,0.1);
+            display: flex; gap: 10px; background: #1e2240; padding: 5px 15px; 
+            border-radius: 25px; align-items: center; height: 50px;
         }
         input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 16px; }
 
         /* СЕТКА ЗАДАЧ */
-        .grid { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
-            padding-bottom: 100px; 
-        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 100px; }
         .card { 
             background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 20px; padding: 25px 10px; text-align: center; cursor: pointer;
+            border-radius: 20px; padding: 25px 10px; text-align: center;
         }
         .card i { font-size: 30px; font-style: normal; margin-bottom: 8px; display: block; }
-        .card span { font-size: 13px; font-weight: 600; }
-
-        /* ПРОФИЛЬ */
-        .promo-box { 
-            background: linear-gradient(135deg, #da22ff, #9733ee); 
-            padding: 25px; border-radius: 25px; text-align: center; margin: 15px 0;
-        }
-        .btn-pro { width: 100%; padding: 15px; border-radius: 15px; border: none; background: white; color: #9733ee; font-weight: bold; font-size: 16px; margin-top: 15px; }
 
         /* НАВИГАЦИЯ */
         nav { 
-            height: var(--nav-h); background: #161b33; 
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            height: var(--nav-h); background: #161b33; display: flex; 
+            justify-content: space-around; align-items: center; position: fixed; 
+            bottom: 0; width: 100%; z-index: 1000; border-top: 1px solid rgba(255,255,255,0.1);
             padding-bottom: env(safe-area-inset-bottom);
-            position: fixed; bottom: 0; width: 100%; z-index: 1000;
         }
-        .nav-item { color: #666; text-align: center; font-size: 10px; flex: 1; cursor: pointer; padding: 10px; }
+        .nav-item { color: #666; text-align: center; font-size: 10px; flex: 1; padding: 10px; }
         .nav-item.active { color: var(--accent); }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; font-style: normal; }
 
-        .weather-pill { background: rgba(0,210,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--accent); font-weight: bold; border: 1px solid var(--accent); }
+        .weather-pill { background: rgba(0,210,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -121,32 +104,31 @@
 <div id="offline-screen">
     <div class="offline-icon">📡</div>
     <h2 style="margin: 0;">Связь прервана</h2>
-    <p style="color: #888; margin-top: 10px;">Для работы Aura AI нужен интернет</p>
-    <button onclick="location.reload()" style="padding: 12px 30px; background: var(--accent); border: none; border-radius: 20px; font-weight: bold; margin-top: 20px;">ОБНОВИТЬ</button>
+    <p style="color: #888; margin-top: 10px;">Проверьте интернет для работы Aura AI</p>
+    <button class="offline-btn" onclick="checkNet()">ПОПРОБОВАТЬ СНОВА</button>
 </div>
 
 <div class="app-container">
     <header>
-        <h1>AURA AI</h1>
-        <div id="weather" class="weather-pill">Определяем...</div>
+        <h1 style="font-size: 18px; margin:0;">AURA AI</h1>
+        <div id="weather" class="weather-pill">Москва: --°C</div>
     </header>
 
     <div class="main-content" id="scroll-area">
         <div id="screen-chat" class="screen active">
             <div id="chat-flow">
-                <div class="bubble ai">Привет! Я Aura AI. Интерфейс обновлен для Samsung и Android 15. Чем могу помочь?</div>
+                <div class="bubble ai">Привет! Я Aura AI. Теперь я работаю стабильно даже при плохой связи. Чем могу помочь?</div>
             </div>
             
             <div class="input-wrapper">
                 <div class="input-container">
                     <input type="text" id="user-msg" placeholder="Спроси меня...">
-                    <button onclick="sendMessage()" style="background:none; border:none; color:var(--accent); font-size:24px; cursor:pointer;">➤</button>
+                    <button onclick="sendMessage()" style="background:none; border:none; color:var(--accent); font-size:24px;">➤</button>
                 </div>
             </div>
         </div>
 
         <div id="screen-tools" class="screen">
-            <h2 style="margin-bottom: 20px;">Инструменты</h2>
             <div class="grid">
                 <div class="card" onclick="quick('План поездки: ')"><i>✈️</i><span>Тур-план</span></div>
                 <div class="card" onclick="quick('Рецепт блюда: ')"><i>🍳</i><span>Шеф-повар</span></div>
@@ -158,18 +140,11 @@
         </div>
 
         <div id="screen-profile" class="screen">
-            <h2 style="margin-bottom: 15px;">Профиль</h2>
-            <div style="background: var(--card-bg); padding: 20px; border-radius: 20px;">
-                <div id="status-txt" style="font-weight: bold;">Статус: Free</div>
-                <div id="id-display" style="font-size: 11px; color: #555; margin-top: 5px;"></div>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 20px; text-align: center;">
+                <div id="status-txt" style="font-weight: bold;">Версия: FREE</div>
+                <button onclick="window.location.href='ТВОЯ_ССЫЛКА'" style="width:100%; padding:15px; border-radius:15px; border:none; background:var(--accent); color:#000; font-weight:bold; margin-top:15px;">КУПИТЬ PRO</button>
             </div>
-            <div id="pay-card" class="promo-box">
-                <h3 style="margin:0">AURA PRO</h3>
-                <p style="font-size: 13px; margin: 10px 0;">Безлимит и лучшие ответы</p>
-                <div style="font-size: 26px; font-weight: 800;">990 ₽ / мес</div>
-                <button class="btn-pro" onclick="openPay()">АКТИВИРОВАТЬ</button>
-            </div>
-            <button onclick="if(confirm('Очистить кэш?')){localStorage.clear(); location.reload();}" style="margin-top: 20px; background: none; border: 1px solid #333; color: #555; padding: 12px; border-radius: 12px; width: 100%;">Сбросить данные</button>
+            <button onclick="localStorage.clear(); location.reload();" style="margin-top:20px; background:none; border:1px solid #333; color:#555; padding:10px; border-radius:10px;">Сброс</button>
         </div>
     </div>
 
@@ -181,28 +156,26 @@
 </div>
 
 <script>
-    // === ВСТАВЬ СВОИ КЛЮЧИ ТУТ ===
+    // === ТВОИ КЛЮЧИ ===
     const S_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
     const S_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
     const D_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
-    const P_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
+    const P_LINK = 'live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U';
 
-    let uId = localStorage.getItem('aura_id') || ('u'+Math.random().toString(36).substr(2,7));
-    localStorage.setItem('aura_id', uId);
-    document.getElementById('id-display').innerText = "ID: " + uId;
-    
-    let mCount = parseInt(localStorage.getItem('aura_c') || '0');
-    let isPro = false;
-
-    // ПРОВЕРКА СЕТИ
     function checkNet() {
         const off = document.getElementById('offline-screen');
-        off.style.display = navigator.onLine ? 'none' : 'flex';
+        if (!navigator.onLine) {
+            off.style.display = 'flex';
+        } else {
+            off.style.display = 'none';
+        }
     }
+
+    // Мгновенная реакция на сеть
     window.addEventListener('online', checkNet);
     window.addEventListener('offline', checkNet);
+    setInterval(checkNet, 2000); // Резервная проверка каждые 2 сек
 
-    // НАВИГАЦИЯ
     function tab(name) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -211,42 +184,15 @@
         document.querySelector('.input-wrapper').style.display = (name === 'chat') ? 'block' : 'none';
     }
 
-    function quick(p) { tab('chat'); document.getElementById('user-msg').value = p; document.getElementById('user-msg').focus(); }
+    function quick(p) { tab('chat'); document.getElementById('user-msg').value = p; }
 
-    // ПОГОДА
-    async function initWeather() {
-        const el = document.getElementById('weather');
-        const update = async (lat, lon, city) => {
-            try {
-                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                const d = await r.json();
-                el.innerText = `${city}: ${Math.round(d.current_weather.temperature)}°C`;
-            } catch(e) { el.innerText = "Москва: --°C"; }
-        };
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                try {
-                    const g = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-                    const gd = await g.json();
-                    update(latitude, longitude, gd.address.city || gd.address.town || "Локация");
-                } catch(e) { update(latitude, longitude, "Город"); }
-            }, () => update(55.75, 37.61, "Москва"), {timeout: 5000});
-        } else update(55.75, 37.61, "Москва");
-    }
-
-    // ЧАТ
     async function sendMessage() {
         const input = document.getElementById('user-msg');
         const text = input.value.trim();
-        if(!text) return;
-        if(mCount >= 10 && !isPro) { alert("Лимит исчерпан!"); tab('profile'); return; }
+        if(!text || !navigator.onLine) { checkNet(); return; }
 
         addB(text, 'user');
         input.value = '...';
-
-        const weatherState = document.getElementById('weather').innerText;
-        const sys = `Ты Aura AI. Сейчас 16.02.2026. Погода: ${weatherState}. Отвечай кратко.`;
 
         try {
             const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -254,15 +200,12 @@
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${D_KEY}`},
                 body: JSON.stringify({
                     model: "deepseek-chat",
-                    messages: [{role:"system", content:sys}, {role:"user", content:text}]
+                    messages: [{role:"system", content:"Ты Aura AI."}, {role:"user", content:text}]
                 })
             });
             const data = await res.json();
             addB(data.choices[0].message.content, 'ai');
-            mCount++;
-            localStorage.setItem('aura_c', mCount);
-            updStatus();
-        } catch(e) { addB("Ошибка сети", "ai"); }
+        } catch(e) { addB("Ошибка соединения", "ai"); }
         input.value = '';
     }
 
@@ -275,32 +218,7 @@
         area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
     }
 
-    function updStatus() { if(!isPro) document.getElementById('status-txt').innerText = `Запросов: ${mCount}/10 (Free)`; }
-    
-    async function checkP() {
-        try {
-            const res = await fetch(`${S_URL}/rest/v1/payments?user_id=eq.${uId}&status=eq.success`, {
-                headers: { 'apikey': S_KEY, 'Authorization': `Bearer ${S_KEY}` }
-            });
-            const d = await res.json();
-            if(d.length > 0) {
-                isPro = true;
-                document.getElementById('status-txt').innerText = "Статус: Aura PRO";
-                document.getElementById('pay-card').style.display = 'none';
-            }
-        } catch(e){}
-    }
-
-    function openPay() { window.location.href = P_LINK; }
-
-    window.onload = () => { 
-        checkNet(); 
-        initWeather(); 
-        checkP();
-        updStatus(); 
-        const area = document.getElementById('scroll-area');
-        area.scrollTop = area.scrollHeight;
-    };
+    window.onload = () => { checkNet(); };
 </script>
 </body>
 </html>
