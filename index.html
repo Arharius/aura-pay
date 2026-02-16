@@ -188,18 +188,32 @@
     }
 
     // БЕЗОПАСНАЯ ОПЛАТА
-  function openPay() {
-        const link = 'https://live_jsfec4_iwjcgwgj-49uhr4-bdfbuqd6uxj9bnzmlv7u/'; // Вставь её сюда тоже для надежности
+ function openPay() {
+        // УБЕДИСЬ, ЧТО ТВОЯ ССЫЛКА НАЧИНАЕТСЯ С HTTPS://
+        let payUrl = 'https://yookassa.ru/my/i/live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U'; 
         
-        if (confirm("Открыть страницу оплаты в браузере?")) {
-            // Создаем временную ссылку и программно кликаем по ней
-            const a = document.createElement('a');
-            a.href = link;
-            a.target = '_blank'; // Это заставит Android открыть браузер
-            a.rel = 'noopener noreferrer';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+        // Проверка: если вдруг ссылка введена без https, добавляем принудительно
+        if (!payUrl.startsWith('http')) {
+            payUrl = 'https://' + payUrl;
+        }
+
+        if (confirm("Перейти на защищенную страницу оплаты ЮKassa?")) {
+            try {
+                // МЕТОД 1: Прямой переход
+                window.open(payUrl, '_blank', 'location=yes,clearsessioncache=yes,clearcache=yes');
+                
+                // МЕТОД 2: Резервный (если первый заблокирован)
+                const link = document.createElement('a');
+                link.href = payUrl;
+                link.target = '_blank';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => document.body.removeChild(link), 100);
+            } catch (e) {
+                // Если совсем всё плохо, просто меняем локацию окна
+                window.location.href = payUrl;
+            }
         }
     }
 
