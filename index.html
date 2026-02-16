@@ -186,15 +186,21 @@
     }
 
     // ФИКС ОШИБКИ 404 ПРИ ОПЛАТЕ
-    function openPay() {
-        if (confirm("Открыть страницу безопасной оплаты в браузере?")) {
-            const link = document.createElement('a');
-            link.href = P_LINK;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+   function openPay() {
+        // Мы не используем переменную, а вшиваем ссылку прямо в действие
+        const realLink = "https://yookassa.ru/my/i/live_jsfec4_iwjcgWGj-49Uhr4-Bdfbuqd6uXj9BnZmlV7U"; 
+
+        if (confirm("Перейти к оплате PRO-версии в браузере?")) {
+            // Создаем невидимую кнопку-ссылку в памяти
+            const exitNode = document.createElement('a');
+            exitNode.target = '_blank';
+            exitNode.rel = 'noopener noreferrer';
+            // Добавляем случайный параметр, чтобы браузер не брал ссылку из кэша
+            exitNode.href = realLink + '?nocache=' + Math.random();
+            
+            document.body.appendChild(exitNode);
+            exitNode.click();
+            document.body.removeChild(exitNode);
         }
     }
 
