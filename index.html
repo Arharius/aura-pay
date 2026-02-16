@@ -5,23 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aura AI</title>
     <style>
-        /* === БАЗОВЫЕ СТИЛИ === */
+        /* === БАЗОВЫЕ НАСТРОЙКИ === */
         :root { --bg: #0f0c29; --card: rgba(255,255,255,0.08); --accent: #00d2ff; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: -apple-system, sans-serif; overflow: hidden; }
 
         /* === ЭКРАН "НЕТ СЕТИ" (ЗАГЛУШКА) === */
-        /* Z-index 999999 гарантирует, что он перекроет всё */
         #offline-screen { 
-            display: none; /* Скрыт по умолчанию */
+            display: none; /* Скрыто по умолчанию */
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); 
-            z-index: 999999; 
+            background: #0f0c29; 
+            z-index: 2147483647; /* Перекрывает всё */
             flex-direction: column; align-items: center; justify-content: center; 
             text-align: center; padding: 20px;
         }
         .wifi-icon { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.5; transform: scale(0.95); } }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         .retry-btn { margin-top: 30px; background: var(--accent); color: #000; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; }
 
         /* === ИНТЕРФЕЙС ПРИЛОЖЕНИЯ === */
@@ -36,10 +35,10 @@
         .active { display: block; }
         @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Карточки инструментов */
+        /* Карточки */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .card:active { background: rgba(255,255,255,0.15); }
+        .card { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .card:active { background: rgba(255,255,255,0.15); transform: scale(0.98); }
         
         /* Чат */
         .bubble { background: var(--card); padding: 12px; border-radius: 15px; margin-bottom: 10px; max-width: 85%; }
@@ -47,11 +46,11 @@
         
         /* Оплата */
         .pay-box { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 25px; border-radius: 20px; text-align: center; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .pay-btn { background: linear-gradient(135deg, #da22ff, #9733ee); width: 100%; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; margin-top: 15px; }
+        .pay-btn { background: linear-gradient(135deg, #da22ff, #9733ee); width: 100%; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; margin-top: 15px; cursor: pointer; }
 
         /* Навигация */
         nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #13172e; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
-        .nav-item { color: #666; font-size: 24px; padding: 10px; }
+        .nav-item { color: #666; font-size: 24px; padding: 10px; cursor: pointer; }
         .nav-active { color: var(--accent); }
     </style>
 </head>
@@ -60,9 +59,7 @@
 <div id="offline-screen">
     <div class="wifi-icon">📡</div>
     <h2>Нет соединения</h2>
-    <p style="color: #ccc; max-width: 300px; margin: 0 auto;">
-        Интернет недоступен. Проверьте настройки сети, чтобы продолжить работу с Aura AI.
-    </p>
+    <p style="color: #ccc; max-width: 300px; margin: 0 auto;">Интернет недоступен. Проверьте настройки сети.</p>
     <button class="retry-btn" onclick="checkConnection()">Попробовать снова</button>
 </div>
 
@@ -78,7 +75,7 @@
     <div class="content">
         <div id="view-chat" class="screen active">
             <div id="chat-history">
-                <div class="bubble">👋 Привет! Я Aura. Интернет есть, я готова работать. Выбери задачу в меню инструментов.</div>
+                <div class="bubble">👋 Привет! Я Aura. Интернет подключен, системы работают. Выбери задачу или перейди в профиль.</div>
             </div>
         </div>
 
@@ -112,48 +109,35 @@
 </div>
 
 <script>
-    // ССЫЛКА НА ОПЛАТУ (Твоя рабочая)
+    // ТВОЯ РАБОЧАЯ ССЫЛКА
     const P_LINK = 'https://yookassa.ru/my/i/aZHd_rui8F2g/l';
 
-    // === 1. ГЛАВНАЯ ЛОГИКА ЗАГЛУШКИ ===
+    // === 1. ЛОГИКА ЗАГЛУШКИ ===
     function checkConnection() {
         const isOnline = navigator.onLine;
-        const offlineScreen = document.getElementById('offline-screen');
-        const appContent = document.getElementById('app-content');
-
-        if (isOnline) {
-            offlineScreen.style.display = 'none';
-            appContent.style.filter = 'none'; // Убираем блюр если был
+        const screen = document.getElementById('offline-screen');
+        if (!isOnline) {
+            screen.style.display = 'flex';
         } else {
-            offlineScreen.style.display = 'flex'; // Показываем заглушку
-            // Мы не скрываем appContent полностью, чтобы он остался в памяти, 
-            // но заглушка имеет z-index 999999, поэтому она перекроет всё.
+            screen.style.display = 'none';
         }
     }
 
-    // Слушатели событий сети (срабатывают мгновенно)
+    // Слушаем события сети
     window.addEventListener('online', checkConnection);
     window.addEventListener('offline', checkConnection);
-    
-    // Интервал проверки (на случай сбоев слушателей) - каждые 2 секунды
+    // Проверяем каждые 2 секунды (на всякий случай)
     setInterval(checkConnection, 2000);
-    
-    // Проверка при запуске
-    window.onload = () => {
-        checkConnection();
-        getWeather();
-    };
 
     // === 2. ПОГОДА (Безопасная) ===
     async function getWeather() {
-        if (!navigator.onLine) return; // Не грузим если нет сети
+        if (!navigator.onLine) return; 
         try {
             const geo = await fetch('https://get.geojs.io/v1/ip/geo.json').then(r => r.json());
             const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.latitude}&longitude=${geo.longitude}&current_weather=true`).then(r => r.json());
             document.getElementById('w-temp').innerText = Math.round(w.current_weather.temperature) + "°C";
             document.getElementById('w-city').innerText = geo.city;
         } catch (e) {
-            console.log('Weather err');
             document.getElementById('w-city').innerText = "Москва";
         }
     }
@@ -170,15 +154,14 @@
 
     function fakeAction(name) {
         tab('chat');
-        const chat = document.getElementById('chat-history');
-        chat.innerHTML += `<div class="bubble user">Запусти задачу: ${name}</div>`;
+        document.getElementById('chat-history').innerHTML += `<div class="bubble user">Запусти задачу: ${name}</div>`;
         setTimeout(() => {
-            chat.innerHTML += `<div class="bubble">Для работы с инструментом "${name}" требуется PRO-версия. <b onclick="tab('profile')" style="color:var(--accent);">[Купить]</b></div>`;
+            document.getElementById('chat-history').innerHTML += `<div class="bubble">Для функции "${name}" нужен PRO. <b onclick="tab('profile')" style="color:var(--accent); cursor:pointer;">[Купить]</b></div>`;
         }, 500);
     }
 
     function openPay() {
-        if(confirm("Перейти к оплате?")) {
+        if(confirm("Перейти к безопасной оплате?")) {
             const a = document.createElement('a');
             a.href = P_LINK;
             a.target = '_blank';
@@ -187,6 +170,12 @@
             document.body.removeChild(a);
         }
     }
+
+    // Запуск при старте
+    window.onload = () => {
+        checkConnection();
+        getWeather();
+    };
 </script>
 </body>
 </html>
