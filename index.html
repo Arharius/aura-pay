@@ -188,9 +188,18 @@
     }
 
     // БЕЗОПАСНАЯ ОПЛАТА
-    function openPay() {
-        if(confirm("Перейти к безопасной оплате в браузере?")) {
-            window.open(P_LINK, '_blank');
+  function openPay() {
+        const link = 'https://live_jsfec4_iwjcgwgj-49uhr4-bdfbuqd6uxj9bnzmlv7u/'; // Вставь её сюда тоже для надежности
+        
+        if (confirm("Открыть страницу оплаты в браузере?")) {
+            // Создаем временную ссылку и программно кликаем по ней
+            const a = document.createElement('a');
+            a.href = link;
+            a.target = '_blank'; // Это заставит Android открыть браузер
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     }
 
