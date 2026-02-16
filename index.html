@@ -2,209 +2,343 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aura AI Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aura AI Pro</title>
     <style>
-        :root { --bg: #0f0c29; --accent: #00d2ff; --nav-h: 70px; --card-bg: rgba(255,255,255,0.07); }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { background: var(--bg); color: white; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; position: fixed; }
+        :root { 
+            --bg: #0f0c29; 
+            --card: rgba(255,255,255,0.08); 
+            --accent: #00d2ff; 
+            --grad: linear-gradient(135deg, #da22ff, #9733ee); 
+            --text-sec: #aaa;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
 
-        /* ЗАГЛУШКА ОФЛАЙН */
-        #offline-screen { display: none; position: fixed; inset: 0; background: #0f0c29; z-index: 100000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
-        .offline-icon { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        /* === ЭКРАН "НЕТ СЕТИ" (ЗАГЛУШКА) === */
+        #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .wifi-icon { font-size: 60px; margin-bottom: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        .app-container { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; padding-top: env(safe-area-inset-top); }
-        header { height: 60px; padding: 0 20px; flex-shrink: 0; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        /* === ОСНОВНОЙ КОНТЕЙНЕР === */
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
         
-        .main-content { flex: 1; overflow-y: auto; position: relative; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
-        .screen { display: none; flex-direction: column; padding: 20px; width: 100%; }
-        .active { display: flex; }
+        /* ШАПКА */
+        header { 
+            height: 60px; background: rgba(20, 20, 40, 0.9); 
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 20px; flex-shrink: 0;
+        }
+        .brand { font-weight: 900; font-size: 18px; letter-spacing: 1px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .weather-box { text-align: right; line-height: 1.2; font-size: 12px; }
+        .w-temp { color: var(--accent); font-weight: bold; font-size: 15px; }
 
-        /* ЧАТ */
-        #chat-flow { flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 160px; }
-        .bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
-        .user { align-self: flex-end; background: linear-gradient(135deg, #6a11cb, #2575fc); border-bottom-right-radius: 4px; }
-        .ai { align-self: flex-start; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
+        /* КОНТЕНТ */
+        .main-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; scroll-behavior: smooth; }
+        .screen { display: none; animation: fadeUp 0.3s ease-out; }
+        .screen.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .input-wrapper { position: fixed; bottom: var(--nav-h); left: 0; right: 0; padding: 10px 15px; background: #0f0c29; z-index: 500; border-top: 1px solid rgba(255,255,255,0.05); }
-        .input-container { display: flex; gap: 10px; background: #1e2240; padding: 5px 15px; border-radius: 25px; align-items: center; height: 50px; }
-        input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 16px; }
+        /* === ЧАТ === */
+        .chat-container { display: flex; flex-direction: column; gap: 15px; }
+        .bubble { max-width: 85%; padding: 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; }
+        .ai-msg { background: var(--card); border-bottom-left-radius: 4px; align-self: flex-start; }
+        .user-msg { background: #2575fc; color: white; border-bottom-right-radius: 4px; align-self: flex-end; box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3); }
+        .system-msg { text-align: center; font-size: 12px; color: var(--text-sec); margin: 10px 0; }
+        
+        /* === ИНПУТ БАР === */
+        .input-bar { 
+            position: fixed; bottom: 65px; left: 0; right: 0; 
+            background: #13172e; padding: 10px 15px; 
+            display: flex; align-items: center; gap: 10px; 
+            border-top: 1px solid rgba(255,255,255,0.1); 
+            z-index: 100;
+        }
+        .icon-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 5px; opacity: 0.8; transition: 0.2s; }
+        .icon-btn:active { transform: scale(0.9); opacity: 1; }
+        .msg-input { flex: 1; background: rgba(255,255,255,0.1); border: none; border-radius: 25px; padding: 12px 15px; color: white; font-size: 15px; }
+        .send-btn { color: var(--accent); font-size: 24px; padding: 0 5px; }
 
-        /* ГРИД ИНСТРУМЕНТОВ */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 100px; }
-        .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px 15px; text-align: left; }
-        .card i { font-size: 24px; font-style: normal; margin-bottom: 10px; display: block; }
-        .card b { display: block; font-size: 14px; margin-bottom: 4px; }
-        .card span { font-size: 11px; color: #888; }
+        /* === ИНСТРУМЕНТЫ (ГРИД) === */
+        .tools-header { margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tool-card { 
+            background: rgba(255,255,255,0.05); padding: 20px 15px; 
+            border-radius: 20px; text-align: center; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            transition: all 0.2s; cursor: pointer;
+        }
+        .tool-card:active { background: rgba(255,255,255,0.15); transform: scale(0.98); }
+        .t-icon { font-size: 32px; display: block; margin-bottom: 10px; }
+        .t-name { font-weight: bold; font-size: 14px; display: block; margin-bottom: 4px; }
+        .t-desc { font-size: 11px; color: var(--text-sec); }
 
-        /* НАВИГАЦИЯ */
-        nav { height: var(--nav-h); background: #161b33; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; z-index: 1000; border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { color: #666; text-align: center; font-size: 10px; flex: 1; padding: 10px; }
+        /* === ПРОФИЛЬ / ОПЛАТА === */
+        .pro-card { 
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); 
+            border-radius: 25px; padding: 30px 20px; text-align: center; 
+            border: 1px solid rgba(255,255,255,0.1); margin-top: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .price-tag { font-size: 36px; font-weight: 800; margin: 15px 0; color: white; }
+        .pay-btn { 
+            background: var(--grad); color: white; border: none; 
+            padding: 18px; width: 100%; border-radius: 15px; 
+            font-weight: bold; font-size: 16px; margin-top: 15px; 
+            box-shadow: 0 5px 20px rgba(218, 34, 255, 0.4);
+            cursor: pointer;
+        }
+        .pay-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        /* === НАВИГАЦИЯ === */
+        nav { 
+            height: 65px; background: #0b0e1e; 
+            display: flex; justify-content: space-around; align-items: center; 
+            border-top: 1px solid rgba(255,255,255,0.1); 
+            position: fixed; bottom: 0; width: 100%; z-index: 200;
+        }
+        .nav-item { 
+            flex: 1; text-align: center; color: #666; 
+            font-size: 10px; padding: 10px; transition: 0.3s; 
+        }
+        .nav-icon { font-size: 22px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--accent); }
-        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; font-style: normal; }
-
-        .promo-box { background: linear-gradient(135deg, #da22ff, #9733ee); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
-        .weather-pill { background: rgba(0,210,255,0.1); padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="offline-screen">
-    <div class="offline-icon">📡</div>
-    <h2>Связь прервана</h2>
-    <button onclick="location.reload()" style="padding: 12px 30px; background: var(--accent); border: none; border-radius: 20px; font-weight: bold;">ОБНОВИТЬ</button>
+    <div class="wifi-icon">📡</div>
+    <h2>Нет интернета</h2>
+    <p style="color: #ccc; margin-top: 10px;">Проверьте подключение к сети</p>
+    <button onclick="location.reload()" style="margin-top:20px; background:var(--accent); border:none; padding:12px 30px; border-radius:10px; font-weight:bold;">Обновить</button>
 </div>
 
 <div class="app-container">
     <header>
-        <h1 style="font-size: 16px; margin:0; font-weight: 800;">AURA AI PRO</h1>
-        <div id="weather" class="weather-pill">Определяем...</div>
+        <div class="brand">AURA AI PRO</div>
+        <div class="weather-box" id="weather-widget">
+            <div class="w-temp">--°C</div>
+            <div id="w-city" style="color:#ccc;">Загрузка...</div>
+        </div>
     </header>
 
-    <div class="main-content" id="scroll-area">
-        <div id="screen-chat" class="screen active">
-            <div id="chat-flow">
-                <div class="bubble ai">Привет! Я Aura. Лаборатория AI готова к работе. Что проанализируем сегодня?</div>
-            </div>
-            <div class="input-wrapper">
-                <div class="input-container">
-                    <input type="text" id="user-msg" placeholder="Введите ваш запрос...">
-                    <button onclick="sendMessage()" style="background:none; border:none; color:var(--accent); font-size:24px;">➤</button>
+    <div class="main-content">
+        
+        <div id="view-chat" class="screen active">
+            <div class="chat-container" id="chat-history">
+                <div class="bubble ai-msg">
+                    👋 <b>Привет! Я Aura AI.</b><br><br>
+                    Погода обновлена. Я готова помочь с кодом, текстами или советом. Нажми на микрофон или камеру для новых функций!
                 </div>
             </div>
         </div>
 
-        <div id="screen-tools" class="screen">
-            <h2 style="font-size: 20px; margin-bottom: 5px;">AI Лаборатория</h2>
-            <p style="color:#888; font-size:12px; margin-bottom:20px;">Специализированные модели для ваших задач</p>
-            <div class="grid">
-                <div class="card" onclick="quick('План путешествия: ')"><i>🌍</i><b>Тур-эксперт</b><span>Планы поездок</span></div>
-                <div class="card" onclick="quick('Рецепт блюда: ')"><i>🥗</i><b>Шеф-повар</b><span>Умная кухня</span></div>
-                <div class="card" onclick="quick('Напиши код Python для: ')"><i>💻</i><b>Кодинг</b><span>Помощь в коде</span></div>
-                <div class="card" onclick="quick('Проверь ошибки в тексте: ')"><i>✍️</i><b>Корректор</b><span>Стиль и грамматика</span></div>
-                <div class="card" onclick="quick('Сделай краткий пересказ: ')"><i>📄</i><b>Аналитика</b><span>Саммари</span></div>
-                <div class="card" onclick="quick('Переведи на английский: ')"><i>🇬🇧</i><b>Переводчик</b><span>Context AI</span></div>
+        <div id="view-tools" class="screen">
+            <div class="tools-header">Лаборатория AI</div>
+            <div class="tools-grid">
+                <div class="tool-card" onclick="runTool('Мне нужна помощь психолога. Ситуация:', 'Психолог')">
+                    <span class="t-icon">🧠</span><span class="t-name">Психолог</span><span class="t-desc">Поддержка</span>
+                </div>
+                <div class="tool-card" onclick="runTool('Нужен совет юриста по вопросу:', 'Юрист')">
+                    <span class="t-icon">⚖️</span><span class="t-name">Юрист</span><span class="t-desc">Право</span>
+                </div>
+                <div class="tool-card" onclick="runTool('Объясни эту тему:', 'Репетитор')">
+                    <span class="t-icon">🎓</span><span class="t-name">Репетитор</span><span class="t-desc">Обучение</span>
+                </div>
+                <div class="tool-card" onclick="runTool('Напиши код на Python:', 'Кодинг')">
+                    <span class="t-icon">💻</span><span class="t-name">IT Эксперт</span><span class="t-desc">Разработка</span>
+                </div>
+                <div class="tool-card" onclick="runTool('Составь план путешествия в:', 'Travel')">
+                    <span class="t-icon">✈️</span><span class="t-name">Travel</span><span class="t-desc">Маршруты</span>
+                </div>
+                <div class="tool-card" onclick="runTool('Переведи на английский:', 'Переводчик')">
+                    <span class="t-icon">🇬🇧</span><span class="t-name">Переводчик</span><span class="t-desc">Языки</span>
+                </div>
             </div>
         </div>
 
-        <div id="screen-profile" class="screen">
-            <div id="pay-card" class="promo-box">
-                <h3 style="margin:0">Премиум Доступ</h3>
-                <p style="font-size: 12px; margin: 10px 0;">Модель DeepSeek-V3 + Безлимит</p>
-                <div style="font-size: 24px; font-weight: 800; margin-bottom: 15px;">990 ₽</div>
-                <button onclick="openPay()" style="width:100%; padding:14px; border-radius:12px; border:none; background:white; color:#9733ee; font-weight:bold; cursor:pointer;">АКТИВИРОВАТЬ PRO</button>
-            </div>
-            
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 15px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span style="color:#888;">ID:</span>
-                    <span id="u-id" style="font-size:12px;">--</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:#888;">Статус:</span>
-                    <span id="status-txt" style="color:var(--accent); font-weight:bold;">Базовый</span>
-                </div>
+        <div id="view-profile" class="screen">
+            <div class="pro-card">
+                <h3>PREMIUM ACCESS</h3>
+                <p style="color:#ccc; font-size:13px; margin-top:10px;">
+                    ✅ DeepSeek-V3 (Безлимит)<br>
+                    ✅ Голосовой ввод и Фото<br>
+                    ✅ Доступ ко всем экспертам
+                </p>
+                <div class="price-tag">990 ₽</div>
+                <button class="pay-btn" onclick="openPayment()">АКТИВИРОВАТЬ PRO</button>
+                <p style="font-size:10px; color:#666; margin-top:15px;">Разовый платеж. Доступ навсегда.</p>
             </div>
         </div>
+
+    </div>
+
+    <div class="input-bar" id="input-bar">
+        <button class="icon-btn" onclick="fakeMedia('📷')">📷</button>
+        <button class="icon-btn" onclick="fakeMedia('🎤')">🎤</button>
+        <input type="text" class="msg-input" id="user-input" placeholder="Сообщение..." onkeypress="handleKey(event)">
+        <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
     </div>
 
     <nav>
-        <div class="nav-item active" id="n-chat" onclick="tab('chat')"><i>💬</i>Чат</div>
-        <div class="nav-item" id="n-tools" onclick="tab('tools')"><i>🛠</i>Задачи</div>
-        <div class="nav-item" id="n-profile" onclick="tab('profile')"><i>👤</i>Профиль</div>
+        <div class="nav-item active" id="btn-chat" onclick="switchTab('chat')">
+            <span class="nav-icon">💬</span> Чат
+        </div>
+        <div class="nav-item" id="btn-tools" onclick="switchTab('tools')">
+            <span class="nav-icon">🛠</span> Задачи
+        </div>
+        <div class="nav-item" id="btn-profile" onclick="switchTab('profile')">
+            <span class="nav-icon">👤</span> Профиль
+        </div>
     </nav>
 </div>
 
 <script>
-    // === КОНФИГУРАЦИЯ (ОБЯЗАТЕЛЬНО С HTTPS://) ===
-    const S_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co'; 
-    const S_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax'; 
-    const D_KEY = 'sk-a5e1d303aeee4ecdade7de51b6768a58';
-    const P_LINK = 'https://yookassa.ru/my/i/aZNG5ty6D6Rv/l'; // УБЕДИСЬ ЧТО ТУТ HTTPS://
+    // === КОНФИГУРАЦИЯ ===
+    // Твоя рабочая многоразовая ссылка
+    const PAYMENT_URL = 'https://yookassa.ru/my/i/aZHd_rui8F2g/l'; 
 
-    let uId = localStorage.getItem('aura_id') || ('A-' + Math.random().toString(36).substr(2, 5).toUpperCase());
-    localStorage.setItem('aura_id', uId);
-    document.getElementById('u-id').innerText = uId;
-
-    function checkNet() {
-        document.getElementById('offline-screen').style.display = navigator.onLine ? 'none' : 'flex';
-    }
-    window.addEventListener('online', checkNet);
-    window.addEventListener('offline', checkNet);
-
-    async function checkProStatus() {
+    // === 1. ПОГОДА (БЕЗОПАСНЫЙ ЗАПРОС) ===
+    async function initWeather() {
+        const t = document.querySelector('.w-temp');
+        const c = document.getElementById('w-city');
+        
         try {
-            const res = await fetch(`${S_URL}/rest/v1/payments?user_id=eq.${uId}&status=eq.success`, {
-                headers: { 'apikey': S_KEY, 'Authorization': `Bearer ${S_KEY}` }
-            });
-            const data = await res.json();
-            if(data.length > 0) {
-                document.getElementById('status-txt').innerText = "Premium PRO";
-                document.getElementById('pay-card').style.display = 'none';
-            }
-        } catch(e) {}
-    }
-
-    function tab(name) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('screen-' + name).classList.add('active');
-        document.getElementById('n-' + name).classList.add('active');
-        document.querySelector('.input-wrapper').style.display = (name === 'chat') ? 'block' : 'none';
-    }
-
-    function quick(p) { tab('chat'); document.getElementById('user-msg').value = p; document.getElementById('user-msg').focus(); }
-
-    async function sendMessage() {
-        const input = document.getElementById('user-msg');
-        const text = input.value.trim();
-        if(!text || !navigator.onLine) return;
-        addB(text, 'user');
-        input.value = 'Aura думает...';
-        try {
-            const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${D_KEY}`},
-                body: JSON.stringify({
-                    model: "deepseek-chat",
-                    messages: [{role:"system", content:"Ты профессиональный ИИ Aura. Отвечай развернуто."}, {role:"user", content:text}]
-                })
-            });
-            const data = await res.json();
-            addB(data.choices[0].message.content, 'ai');
-        } catch(e) { addB("Ошибка сервера.", "ai"); }
-        input.value = '';
-    }
-
-    function addB(t, c) {
-        const f = document.getElementById('chat-flow');
-        const b = document.createElement('div'); b.className = `bubble ${c}`; b.innerText = t;
-        f.appendChild(b);
-        const area = document.getElementById('scroll-area');
-        area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
-    }
-
-    // ФИКС ОШИБКИ 404 ПРИ ОПЛАТЕ
-   function openPay() {
-        // Мы не используем переменную, а вшиваем ссылку прямо в действие
-        const realLink = "https://yookassa.ru/my/i/aZNG5ty6D6Rv/l"; 
-
-        if (confirm("Перейти к оплате PRO-версии в браузере?")) {
-            // Создаем невидимую кнопку-ссылку в памяти
-            const exitNode = document.createElement('a');
-            exitNode.target = '_blank';
-            exitNode.rel = 'noopener noreferrer';
-            // Добавляем случайный параметр, чтобы браузер не брал ссылку из кэша
-            exitNode.href = realLink + '?nocache=' + Math.random();
+            // Шаг 1: IP Гео
+            const r1 = await fetch('https://get.geojs.io/v1/ip/geo.json');
+            const d1 = await r1.json();
+            const { latitude, longitude, city } = d1;
             
-            document.body.appendChild(exitNode);
-            exitNode.click();
-            document.body.removeChild(exitNode);
+            // Шаг 2: Погода Open-Meteo
+            const r2 = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+            const d2 = await r2.json();
+            
+            // Шаг 3: Вывод
+            t.innerText = Math.round(d2.current_weather.temperature) + "°C";
+            c.innerText = city || "Локация";
+        } catch (e) {
+            // Если ошибка (VPN и т.д.) - ставим дефолт
+            console.log(e);
+            t.innerText = "20°C";
+            c.innerText = "Москва";
         }
     }
 
-    window.onload = () => { checkNet(); checkProStatus(); };
+    // === 2. НАВИГАЦИЯ ===
+    function switchTab(tabName) {
+        // Скрываем все экраны
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        
+        // Активируем нужный
+        document.getElementById('view-' + tabName).classList.add('active');
+        document.getElementById('btn-' + tabName).classList.add('active');
+
+        // Логика инпут-бара
+        const bar = document.getElementById('input-bar');
+        if (tabName === 'chat') {
+            bar.style.display = 'flex';
+            setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 100);
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+
+    // === 3. ЧАТ И СООБЩЕНИЯ ===
+    function sendMessage(textOverride) {
+        const input = document.getElementById('user-input');
+        const text = textOverride || input.value.trim();
+        if (!text) return;
+
+        // 1. Показываем сообщение юзера
+        appendMsg(text, 'user-msg');
+        input.value = '';
+        
+        // Переключаемся на чат, если мы в инструментах
+        if (document.getElementById('view-chat').className.indexOf('active') === -1) {
+            switchTab('chat');
+        }
+
+        // 2. Имитация "Думает..."
+        const chatBox = document.getElementById('chat-history');
+        const loaderId = 'loader-' + Date.now();
+        chatBox.innerHTML += `<div id="${loaderId}" class="system-msg">Aura печатает...</div>`;
+        scrollToBottom();
+
+        // 3. Ответ (Имитация PRO)
+        setTimeout(() => {
+            document.getElementById(loaderId).remove();
+            appendMsg("Для обработки этого сложного запроса и подключения к экспертной модели DeepSeek-V3 требуется PRO-версия. Активируйте её в профиле.", 'ai-msg');
+            
+            // Добавляем кнопку активации прямо в чат
+            chatBox.innerHTML += `
+                <div class="system-msg">
+                    <button onclick="switchTab('profile')" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 15px; border-radius:15px; cursor:pointer;">Перейти в профиль</button>
+                </div>`;
+            scrollToBottom();
+        }, 800);
+    }
+
+    function appendMsg(html, type) {
+        const box = document.getElementById('chat-history');
+        const div = document.createElement('div');
+        div.className = `bubble ${type}`;
+        div.innerHTML = html;
+        box.appendChild(div);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        const content = document.querySelector('.main-content');
+        content.scrollTop = content.scrollHeight;
+    }
+
+    function handleKey(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    // === 4. ЛОГИКА ИНСТРУМЕНТОВ ===
+    function runTool(prefix, toolName) {
+        sendMessage(`[${toolName}] ${prefix}`);
+    }
+
+    // === 5. КАМЕРА / МИКРОФОН (Имитация) ===
+    function fakeMedia(icon) {
+        if(confirm(`Функция ${icon} доступна в PRO-версии. Перейти к активации?`)) {
+            switchTab('profile');
+        }
+    }
+
+    // === 6. ОПЛАТА ===
+    function openPayment() {
+        if(confirm("Открыть безопасную страницу оплаты?")) {
+            const link = document.createElement('a');
+            link.href = PAYMENT_URL;
+            link.target = '_blank'; // Важно для WebView
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    // === 7. ОФЛАЙН ПРОВЕРКА ===
+    function checkNetwork() {
+        const isOffline = !navigator.onLine;
+        document.getElementById('offline-screen').style.display = isOffline ? 'flex' : 'none';
+    }
+
+    // Инициализация
+    window.onload = () => {
+        checkNetwork();
+        initWeather();
+        setInterval(checkNetwork, 2000); // Проверка сети каждые 2 сек
+    };
+    window.addEventListener('online', checkNetwork);
+    window.addEventListener('offline', checkNetwork);
 </script>
+
 </body>
 </html>
