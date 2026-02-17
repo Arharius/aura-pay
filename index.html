@@ -3,254 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI</title>
+    <meta name="theme-color" content="#0a0e27">
+    <title>Aura AI - Решение ЦДЗ</title>
+    <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
     <style>
-        :root { --bg: #0f0c29; --card: rgba(255,255,255,0.08); --accent: #00d2ff; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: -apple-system, sans-serif; overflow: hidden; }
-
-        /* === ЗАГЛУШКА ОФЛАЙН (ОСТАВЛЯЕМ, ОНА РАБОТАЕТ) === */
-        #offline-screen { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f0c29; z-index: 999999; 
-            flex-direction: column; align-items: center; justify-content: center; 
-            text-align: center; padding: 20px;
-        }
-        .wifi-icon { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
-        /* === ИНТЕРФЕЙС === */
-        .app-container { display: flex; flex-direction: column; height: 100vh; }
-        
-        header { padding: 15px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-weight: 900; font-size: 18px; letter-spacing: 1px; color: var(--accent); }
-        .status { font-size: 10px; color: #0f0; display: flex; align-items: center; gap: 5px; }
-        .dot { width: 6px; height: 6px; background: #0f0; border-radius: 50%; }
-
-        .content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
-        .screen { display: none; animation: fade 0.3s; }
-        .active { display: block; }
-        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-
-        /* ЧАТ */
-        .chat-box { display: flex; flex-direction: column; gap: 10px; }
-        .bubble { padding: 12px 16px; border-radius: 18px; max-width: 85%; line-height: 1.4; font-size: 15px; }
-        .ai { background: var(--card); border-bottom-left-radius: 2px; align-self: flex-start; }
-        .user { background: #2575fc; border-bottom-right-radius: 2px; align-self: flex-end; }
-        .typing { color: #aaa; font-size: 12px; margin-left: 10px; display: none; }
-
-        /* ИНСТРУМЕНТЫ */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: var(--card); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
-        .card:active { background: rgba(255,255,255,0.15); transform: scale(0.98); }
-        .c-icon { font-size: 30px; display: block; margin-bottom: 10px; }
-        .c-title { font-weight: bold; font-size: 14px; }
-        .c-desc { font-size: 11px; color: #aaa; }
-
-        /* ПРОФИЛЬ */
-        .pay-box { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 25px; border-radius: 20px; text-align: center; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .pay-btn { background: linear-gradient(135deg, #da22ff, #9733ee); width: 100%; border: none; padding: 16px; border-radius: 12px; color: white; font-weight: bold; margin-top: 15px; font-size: 16px; cursor: pointer; }
-
-        /* ИНПУТ */
-        .input-area { position: fixed; bottom: 65px; left: 0; right: 0; background: #13172e; padding: 10px; display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .inp { flex: 1; background: rgba(255,255,255,0.1); border: none; border-radius: 20px; padding: 10px 15px; color: white; font-size: 16px; }
-        .send { color: var(--accent); font-size: 24px; background: none; border: none; padding: 0 10px; }
-
-        /* НАВИГАЦИЯ */
-        nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #13172e; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
-        .nav-item { color: #666; font-size: 24px; padding: 10px; width: 100%; text-align: center; }
-        .nav-active { color: var(--accent); }
+        :root { --bg: #0a0e27; --card: rgba(255,255,255,0.05); --accent: #00d4ff; --accent2: #7000ff; --pro: #ffd700; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body, html { height: 100%; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+        #splash { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .splash-logo { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .loader { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 20px; }
+        .loader-bar { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s; }
+        .app { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.3s; }
+        .app.visible { opacity: 1; }
+        header { padding: 12px 16px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 900; font-size: 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .credits { font-size: 12px; color: var(--accent); background: rgba(0,212,255,0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0,212,255,0.3); }
+        .mode-tabs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .mode-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .mode-tab.active { background: rgba(0,212,255,0.2); color: var(--accent); border-color: var(--accent); }
+        .mode-tab.pro { opacity: 0.6; }
+        .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 220px; }
+        .chat-container { display: flex; flex-direction: column; gap: 12px; }
+        .message { max-width: 90%; padding: 14px 18px; border-radius: 18px; font-size: 15px; line-height: 1.5; animation: messageIn 0.3s ease-out; }
+        @keyframes messageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.ai { background: var(--card); border: 1px solid rgba(255,255,255,0.1); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message img { max-width: 100%; border-radius: 8px; margin: 8px 0; max-height: 300px; object-fit: contain; }
+        .input-container { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,14,39,0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 16px 80px 16px; }
+        .input-actions { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .action-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 14px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+        .action-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+        .input-wrapper { display: flex; gap: 10px; align-items: flex-end; background: rgba(255,255,255,0.05); border-radius: 24px; padding: 8px 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .message-input { flex: 1; background: none; border: none; color: white; font-size: 15px; padding: 8px 0; max-height: 120px; resize: none; font-family: inherit; outline: none; }
+        .message-input::placeholder { color: rgba(255,255,255,0.4); }
+        .send-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: none; color: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+        .send-btn:disabled { opacity: 0.3; background: #666; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; }
+        .modal.active { display: flex; }
+        .camera-preview { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
+        .camera-preview video, .camera-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .camera-controls { padding: 20px; display: flex; justify-content: center; gap: 30px; background: rgba(0,0,0,0.8); }
+        .camera-btn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 4px solid rgba(255,255,255,0.3); cursor: pointer; }
+        .close-modal { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; z-index: 10; }
+        .paywall { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; display: none; flex-direction: column; padding: 24px; overflow-y: auto; }
+        .paywall.active { display: flex; }
+        .paywall-title { font-size: 28px; font-weight: 900; margin-bottom: 8px; color: var(--pro); text-align: center; }
+        .pricing-card { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px; margin-bottom: 16px; border-color: var(--pro); background: rgba(255,215,0,0.05); }
+        .price { font-size: 32px; font-weight: 900; margin: 12px 0; }
+        .price-features { list-style: none; font-size: 14px; color: rgba(255,255,255,0.8); margin: 16px 0; }
+        .price-features li { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .buy-btn { width: 100%; padding: 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--pro), #ffed4e); color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .typing-indicator { display: none; align-self: flex-start; background: var(--card); padding: 12px 18px; border-radius: 18px; border-bottom-left-radius: 4px; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); }
+        .typing-indicator.active { display: flex; }
+        .typing-dots { display: flex; gap: 4px; }
+        .typing-dots span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(0,0,0,0.9); color: white; padding: 12px 24px; border-radius: 24px; font-size: 14px; z-index: 3000; transition: transform 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        #file-input { display: none; }
     </style>
 </head>
 <body>
 
-<div id="offline-screen">
-    <div class="wifi-icon">📡</div>
-    <h2>Нет связи</h2>
-    <p style="color:#aaa;">Интернет недоступен</p>
-    <button onclick="checkConnection()" style="background:var(--accent); border:none; padding:10px 30px; border-radius:20px; margin-top:20px;">Обновить</button>
+<div id="splash">
+    <div class="splash-logo">AURA AI</div>
+    <div style="color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 10px;">Решение ЦДЗ и ГДЗ</div>
+    <div class="loader"><div class="loader-bar" id="loader-bar"></div></div>
 </div>
 
-<div class="app-container">
+<div class="modal" id="camera-modal">
+    <button class="close-modal" onclick="closeCamera()">✕</button>
+    <div class="camera-preview">
+        <video id="camera-video" autoplay playsinline></video>
+        <canvas id="camera-canvas" style="display:none;"></canvas>
+    </div>
+    <div class="camera-controls">
+        <button class="camera-btn" onclick="takePhoto()"></button>
+    </div>
+</div>
+
+<div class="paywall" id="paywall">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <div class="paywall-title">👑 PRO Версия</div>
+        <div style="color: rgba(255,255,255,0.6);">Разблокируйте все возможности</div>
+    </div>
+    
+    <div class="pricing-card">
+        <div style="font-size: 18px; font-weight: 700; color: var(--pro);">PRO Доступ</div>
+        <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">навсегда</span></div>
+        <ul class="price-features">
+            <li>✅ Безлимитное решение задач</li>
+            <li>✅ Юрист (сложные консультации)</li>
+            <li>✅ Психолог (глубокая терапия)</li>
+            <li>✅ Распознавание рукописи</li>
+        </ul>
+        <button class="buy-btn" onclick="initPayment()">Купить PRO</button>
+    </div>
+    
+    <button onclick="closePaywall()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 12px; width: 100%;">
+        Продолжить бесплатно (20/день)
+    </button>
+</div>
+
+<div class="app" id="app">
     <header>
         <div class="logo">AURA AI</div>
-        <div class="status"><div class="dot"></div> Online</div>
+        <div class="credits" id="credits-display">20/20</div>
     </header>
 
-    <div class="content">
-        <div id="view-chat" class="screen active">
-            <div class="chat-box" id="chat-history">
-                <div class="bubble ai">
-                    Привет! Я Aura AI — твой умный ассистент. <br><br>
-                    Я работаю в режиме Демо. Ты можешь протестировать общение, выбрав инструмент в меню.
-                </div>
-            </div>
-            <div id="typing-indicator" class="typing">Aura печатает...</div>
-        </div>
+    <div class="mode-tabs">
+        <div class="mode-tab active" onclick="setMode('tutor')" data-mode="tutor">📚 Решение задач</div>
+        <div class="mode-tab pro" onclick="setMode('lawyer')" data-mode="lawyer">⚖️ Юрист</div>
+        <div class="mode-tab pro" onclick="setMode('psych')" data-mode="psych">🧠 Психолог</div>
+    </div>
 
-        <div id="view-tools" class="screen">
-            <h3 style="margin-top:0;">Лаборатория задач</h3>
-            <div class="grid">
-                <div class="card" onclick="startScenario('psy')">
-                    <span class="c-icon">🧠</span><span class="c-title">Психолог</span><br><span class="c-desc">Поддержка</span>
-                </div>
-                <div class="card" onclick="startScenario('law')">
-                    <span class="c-icon">⚖️</span><span class="c-title">Юрист</span><br><span class="c-desc">Советы</span>
-                </div>
-                <div class="card" onclick="startScenario('code')">
-                    <span class="c-icon">💻</span><span class="c-title">Кодинг</span><br><span class="c-desc">Python/JS</span>
-                </div>
-                <div class="card" onclick="startScenario('idea')">
-                    <span class="c-icon">💡</span><span class="c-title">Креатив</span><br><span class="c-desc">Идеи</span>
-                </div>
-            </div>
-            <div style="margin-top:20px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px; font-size:12px; color:#aaa;">
-                * Базовая модель бесплатна. Для DeepSeek-V3 требуется PRO.
+    <div class="content" id="chat-container">
+        <div class="chat-container" id="messages">
+            <div class="message ai">
+                <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+                Бесплатно: 20 решений в день<br>
+                PRO: Безлимит + Юрист + Психолог<br><br>
+                1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+                2. Или напишите текст вручную<br>
+                3. Получите пошаговое решение
             </div>
         </div>
-
-        <div id="view-profile" class="screen">
-            <div class="pay-box">
-                <h3>AURA PRO</h3>
-                <ul style="text-align:left; font-size:13px; color:#ddd; line-height:1.6;">
-                    <li>✅ Доступ к модели DeepSeek-V3</li>
-                    <li>✅ Безлимитные сообщения</li>
-                    <li>✅ Приоритетная обработка</li>
-                </ul>
-                <div style="font-size:32px; font-weight:800; margin:15px 0;">990 ₽</div>
-                <button class="pay-btn" onclick="openPay()">АКТИВИРОВАТЬ</button>
-            </div>
+        <div class="typing-indicator" id="typing">
+            <span>Решаю...</span>
+            <div class="typing-dots"><span></span><span></span><span></span></div>
         </div>
     </div>
 
-    <div class="input-area" id="input-bar">
-        <input type="text" class="inp" id="msg-input" placeholder="Сообщение...">
-        <button class="send" onclick="sendMessage()">➤</button>
+    <div class="input-container">
+        <div class="input-actions">
+            <button class="action-btn" onclick="openCamera()">📷 Камера</button>
+            <button class="action-btn" onclick="document.getElementById('file-input').click()">📎 Файл</button>
+            <button class="action-btn" onclick="showPaywall()">⭐ PRO</button>
+        </div>
+        <div class="input-wrapper">
+            <textarea class="message-input" id="msg-input" placeholder="Введите задачу..." rows="1"></textarea>
+            <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
     </div>
 
-    <nav>
-        <div class="nav-item nav-active" id="n1" onclick="tab('chat')">💬</div>
-        <div class="nav-item" id="n2" onclick="tab('tools')">🛠</div>
-        <div class="nav-item" id="n3" onclick="tab('profile')">👤</div>
-    </nav>
+    <input type="file" id="file-input" accept="image/*,.pdf,.txt" onchange="handleFile(event)">
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-    const PAY_LINK = 'https://yookassa.ru/my/i/aZHd_rui8F2g/l';
-    let currentScenario = null; 
+// ⚠️ ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ КЛЮЧ (anon public key из Supabase Settings > API)
+const SUPABASE_KEY = 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax';
 
-    // === 1. УМНЫЙ ЧАТ-БОТ (Имитация интеллекта) ===
-    function sendMessage() {
-        const input = document.getElementById('msg-input');
-        const text = input.value.trim();
-        if(!text) return;
-
-        addMsg(text, 'user');
-        input.value = '';
-        
-        showTyping(true);
-
-        setTimeout(() => {
-            let reply = generateReply(text);
-            showTyping(false);
-            addMsg(reply, 'ai');
-        }, 1500); // Задержка имитирует "мышление"
+const CONFIG = {
+    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
+    SUPABASE_KEY: SUPABASE_KEY,
+    DAILY_LIMIT: 20,
+    MODES: {
+        tutor: { name: 'Репетитор', free: true, system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй каждый шаг простым языком. Для математики: показывай формулы.' },
+        lawyer: { name: 'Юрист', free: false, system: 'Ты старший юрист с 15-летним стажем в РФ. Давай ДЕТАЛЬНЫЕ консультации с конкретными статьями ГК РФ, НК РФ, ТК РФ. Давай сроки и стратегии.' },
+        psych: { name: 'Психолог', free: false, system: 'Ты клинический психолог, специалист по КПТ. Проводи терапию: давай домашние задания, дневники мыслей, техники самопомощи. Глубинная работа.' }
     }
+};
 
-    function generateReply(text) {
-        text = text.toLowerCase();
-        
-        // СЦЕНАРИИ
-        if (currentScenario === 'psy') {
-            currentScenario = 'paywall'; 
-            return "Я понимаю. Это непростая ситуация. Базовая модель рекомендует сохранять спокойствие. Чтобы получить профессиональный разбор по методикам КПТ, активируйте полную модель в профиле.";
+let currentMode = 'tutor';
+let messageCount = 0;
+let stream = null;
+let isPro = localStorage.getItem('aura_pro') === 'true';
+
+window.onload = () => {
+    const today = new Date().toDateString();
+    messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
+    updateCredits();
+    
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 20;
+        document.getElementById('loader-bar').style.width = progress + '%';
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => document.getElementById('splash').remove(), 500);
+                document.getElementById('app').classList.add('visible');
+            }, 500);
         }
-        if (currentScenario === 'law') {
-            currentScenario = 'paywall';
-            return "Ваш вопрос касается гражданского права. Базовая модель видит здесь риски. Для точного анализа статей ГК РФ перейдите на PRO-версию.";
+    }, 200);
+    
+    document.getElementById('msg-input').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    
+    document.getElementById('msg-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
         }
-        if (currentScenario === 'code') {
-             currentScenario = 'paywall';
-             return "Я вижу задачу на программирование. Я могу написать псевдокод, но для генерации рабочего синтаксиса Python нужна мощность DeepSeek-V3 (PRO).";
+    });
+};
+
+function setMode(mode) {
+    const modeConfig = CONFIG.MODES[mode];
+    if (!modeConfig.free && !isPro) {
+        showPaywall();
+        const html = `<div style="background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.3); border-radius: 16px; padding: 20px; text-align: center; margin: 10px 0;">
+            <h3 style="color: var(--pro); margin-bottom: 10px;">${modeConfig.name} PRO</h3>
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 15px;">${mode === 'lawyer' ? 'Сложные правовые консультации с ссылками на законы, стратегии защиты.' : 'Глубокая терапия КПТ, работа с травмами, персональный план.'}</p>
+            <button onclick="showPaywall()" style="background: linear-gradient(135deg, var(--pro), #ffed4e); color: #000; border: none; padding: 10px 24px; border-radius: 20px; font-weight: bold; cursor: pointer;">Разблокировать за 990₽</button>
+        </div>`;
+        addMessage(html, 'ai');
+        return;
+    }
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+    addMessage(`Режим: ${modeConfig.name}`, 'system');
+}
+
+async function sendMessage(imageData = null) {
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (!text && !imageData) return;
+    
+    if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+        showToast('Лимит 20 решений/день. Купите PRO.');
+        showPaywall();
+        return;
+    }
+    
+    addMessage(imageData ? '[Фото] ' + text : text, 'user', imageData);
+    input.value = '';
+    input.style.height = 'auto';
+    
+    document.getElementById('typing').classList.add('active');
+    document.getElementById('send-btn').disabled = true;
+    
+    try {
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}` },
+            body: JSON.stringify({
+                mode: currentMode,
+                message: text || 'Реши задачу на фото',
+                system: CONFIG.MODES[currentMode].system,
+                user_pro: isPro
+            })
+        });
+        
+        const data = await response.json();
+        document.getElementById('typing').classList.remove('active');
+        
+        if (data.error) throw new Error(data.error);
+        addMessage(data.answer, 'ai');
+        
+        if (!isPro) {
+            messageCount++;
+            localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+            updateCredits();
         }
-        if (currentScenario === 'paywall') {
-            return "Для продолжения диалога и снятия лимитов, пожалуйста, активируйте PRO-версию. <br><br><b onclick='tab(\"profile\")' style='color:#00d2ff; cursor:pointer;'>[Перейти к оплате]</b>";
-        }
-
-        // БОЛТАЛКА (Бесплатная)
-        if (text.includes('привет')) return "Привет! Чем могу помочь?";
-        if (text.includes('как дела')) return "Системы в норме! Готова работать.";
-        
-        currentScenario = 'paywall'; 
-        return "Это сложный запрос. Чтобы я могла дать развернутый ответ, мне нужны ресурсы PRO-версии. Активировать сейчас?";
+    } catch (error) {
+        document.getElementById('typing').classList.remove('active');
+        addMessage('❌ Ошибка соединения. Проверьте интернет.', 'ai');
+    } finally {
+        document.getElementById('send-btn').disabled = false;
     }
+}
 
-    function startScenario(type) {
-        tab('chat');
-        currentScenario = type;
-        let intro = "";
-        if(type === 'psy') intro = "Режим Психолога активен. Что вас беспокоит? Расскажите подробно.";
-        if(type === 'law') intro = "Режим Юриста активен. Опишите вашу проблему.";
-        if(type === 'code') intro = "Режим IT-эксперта. Какую задачу нужно решить?";
-        if(type === 'idea') intro = "Режим Креатива. Для чего нужна идея?";
-        
-        showTyping(true);
-        setTimeout(() => {
-            showTyping(false);
-            addMsg(intro, 'ai');
-        }, 1000);
+async function openCamera() {
+    if (currentMode !== 'tutor' && !isPro) {
+        showToast('Камера для этого режима доступна в PRO');
+        showPaywall();
+        return;
     }
-
-    function addMsg(html, type) {
-        const chat = document.getElementById('chat-history');
-        const div = document.createElement('div');
-        div.className = `bubble ${type}`;
-        div.innerHTML = html;
-        chat.appendChild(div);
-        chat.scrollTop = chat.scrollHeight; 
+    if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+        showPaywall();
+        return;
     }
-
-    function showTyping(show) {
-        document.getElementById('typing-indicator').style.display = show ? 'block' : 'none';
-        document.getElementById('chat-history').scrollTop = document.getElementById('chat-history').scrollHeight;
+    document.getElementById('camera-modal').classList.add('active');
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        document.getElementById('camera-video').srcObject = stream;
+    } catch (err) {
+        showToast('Нет доступа к камере');
+        closeCamera();
     }
+}
 
-    // === 2. НАВИГАЦИЯ ===
-    function tab(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        
-        if(id === 'chat') { 
-            document.getElementById('view-chat').classList.add('active'); 
-            document.getElementById('n1').classList.add('nav-active');
-            document.getElementById('input-bar').style.display = 'flex';
-            setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 100);
+function takePhoto() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    closeCamera();
+    
+    showToast('Распознаю текст...');
+    Tesseract.recognize(imageData, 'rus+eng').then(({ data: { text } }) => {
+        document.getElementById('msg-input').value = text;
+        showToast('Проверьте текст и отправьте');
+    });
+}
+
+function closeCamera() {
+    document.getElementById('camera-modal').classList.remove('active');
+    if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+}
+
+function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showToast('Файл слишком большой'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if (file.type.startsWith('image/')) {
+            Tesseract.recognize(e.target.result, 'rus+eng').then(({ data: { text } }) => {
+                document.getElementById('msg-input').value = text;
+                showToast('Текст распознан');
+            });
         } else {
-            document.getElementById('input-bar').style.display = 'none';
+            document.getElementById('msg-input').value = e.target.result.substring(0, 1000);
         }
-        
-        if(id === 'tools') { document.getElementById('view-tools').classList.add('active'); document.getElementById('n2').classList.add('nav-active'); }
-        if(id === 'profile') { document.getElementById('view-profile').classList.add('active'); document.getElementById('n3').classList.add('nav-active'); }
-    }
+    };
+    reader.readAsDataURL(file);
+}
 
-    // === 3. ОПЛАТА ===
-    function openPay() {
-        if(confirm("Перейти к оплате?")) {
-            const a = document.createElement('a'); a.href = PAY_LINK; a.target = '_blank';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
-    }
+async function initPayment() {
+    showToast('Создание платежа...');
+    try {
+        const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
+        localStorage.setItem('user_id', userId);
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}` },
+            body: JSON.stringify({ amount: '990.00', description: 'Aura AI PRO', user_id: userId, return_url: window.location.href + '?payment=success' })
+        });
+        const data = await response.json();
+        if (data.confirmation_url) window.location.href = data.confirmation_url;
+    } catch (err) { showToast('Ошибка оплаты'); }
+}
 
-    // === 4. ПРОВЕРКА СЕТИ ===
-    function checkConnection() {
-        const isOnline = navigator.onLine;
-        document.getElementById('offline-screen').style.display = isOnline ? 'none' : 'flex';
-    }
-    window.addEventListener('online', checkConnection);
-    window.addEventListener('offline', checkConnection);
-    setInterval(checkConnection, 2000);
+function addMessage(content, type, image = null) {
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    div.innerHTML = image && type === 'user' ? `<img src="${image}" style="max-width:100%;margin-bottom:8px;border-radius:8px;"><br>${content}` : content;
+    document.getElementById('messages').appendChild(div);
+    document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+}
 
-    window.onload = checkConnection;
+function updateCredits() {
+    const el = document.getElementById('credits-display');
+    el.textContent = isPro ? '∞/∞' : `${CONFIG.DAILY_LIMIT - messageCount}/${CONFIG.DAILY_LIMIT}`;
+    if (!isPro && messageCount >= 15) el.style.color = '#ff1744';
+}
+
+function showPaywall() { document.getElementById('paywall').classList.add('active'); }
+function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('payment') === 'success') {
+    localStorage.setItem('aura_pro', 'true');
+    isPro = true;
+    updateCredits();
+    showToast('✅ PRO активирован!');
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
 </script>
+
 </body>
 </html>
