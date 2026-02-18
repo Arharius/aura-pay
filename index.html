@@ -62,9 +62,17 @@
         .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(0,0,0,0.9); color: white; padding: 12px 24px; border-radius: 24px; font-size: 14px; z-index: 3000; transition: transform 0.3s; }
         .toast.show { transform: translateX(-50%) translateY(0); }
         #file-input { display: none; }
+        #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     </style>
 </head>
 <body>
+
+<div id="offline-screen">
+    <div style="font-size: 64px; margin-bottom: 20px;">📡</div>
+    <h2 style="margin-bottom: 12px; color: white;">Нет подключения</h2>
+    <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px; max-width: 300px;">Для работы Aura AI требуется интернет</p>
+    <button onclick="checkConnection()" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 24px; font-weight: bold; font-size: 16px; cursor: pointer;">Повторить</button>
+</div>
 
 <div id="splash">
     <div class="splash-logo">AURA AI</div>
@@ -91,7 +99,7 @@
     
     <div class="pricing-card">
         <div style="font-size: 18px; font-weight: 700; color: var(--pro);">PRO Доступ</div>
-        <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">навсегда</span></div>
+        <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">30 дней</span></div>
         <ul class="price-features">
             <li>✅ Безлимитное решение задач</li>
             <li>✅ Юрист (сложные консультации)</li>
@@ -123,7 +131,7 @@
             <div class="message ai">
                 <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
                 Бесплатно: 20 решений в день<br>
-                PRO: Безлимит + Юрист + Психолог<br><br>
+                PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
                 1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
                 2. Или напишите текст вручную<br>
                 3. Получите пошаговое решение
@@ -153,11 +161,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ⚠️ Убедитесь что это ваш реальный Anon Key из Supabase (Project Settings > API)
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
 const CONFIG = {
-    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',  // ← ИСПРАВЛЕНО: убран пробел и запятая
+    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
     SUPABASE_KEY: SUPABASE_KEY,
     DAILY_LIMIT: 20,
     MODES: {
@@ -170,9 +177,57 @@ const CONFIG = {
 let currentMode = 'tutor';
 let messageCount = 0;
 let stream = null;
-let isPro = localStorage.getItem('aura_pro') === 'true';
+
+// Проверка PRO (подписка на 30 дней)
+function checkProStatus() {
+    const proExpiry = localStorage.getItem('aura_pro_expiry');
+    if (!proExpiry) return false;
+    
+    const expiryDate = new Date(proExpiry);
+    const now = new Date();
+    
+    if (now > expiryDate) {
+        localStorage.removeItem('aura_pro');
+        localStorage.removeItem('aura_pro_expiry');
+        return false;
+    }
+    return true;
+}
+
+let isPro = checkProStatus();
+
+// Проверка интернета
+function updateOnlineStatus() {
+    const offlineScreen = document.getElementById('offline-screen');
+    const isOnline = navigator.onLine;
+    
+    if (!isOnline) {
+        offlineScreen.style.display = 'flex';
+        showToast('Связь потеряна');
+    } else {
+        offlineScreen.style.display = 'none';
+        if (offlineScreen.dataset.wasOffline === 'true') {
+            showToast('Подключение восстановлено');
+        }
+    }
+    offlineScreen.dataset.wasOffline = (!isOnline).toString();
+}
+
+function checkConnection() {
+    showToast('Проверка...');
+    if (navigator.onLine) {
+        updateOnlineStatus();
+        showToast('✅ Интернет есть');
+    } else {
+        showToast('❌ Нет связи');
+    }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
 
 window.onload = () => {
+    updateOnlineStatus();
     const today = new Date().toDateString();
     messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
     updateCredits();
@@ -223,6 +278,12 @@ function setMode(mode) {
 }
 
 async function sendMessage(imageData = null) {
+    if (!navigator.onLine) {
+        showToast('Нет интернета. Проверьте подключение.');
+        document.getElementById('offline-screen').style.display = 'flex';
+        return;
+    }
+    
     const input = document.getElementById('msg-input');
     const text = input.value.trim();
     if (!text && !imageData) return;
@@ -242,8 +303,6 @@ async function sendMessage(imageData = null) {
     
     try {
         const url = `${CONFIG.SUPABASE_URL}/functions/v1/solve-task`;
-        console.log('Отправка на:', url);  // Для отладки
-        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
@@ -258,15 +317,11 @@ async function sendMessage(imageData = null) {
             })
         });
         
-        console.log('Статус ответа:', response.status);  // Для отладки
-        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Получены данные:', data);  // Для отладки
-        
         document.getElementById('typing').classList.remove('active');
         
         if (data.error) throw new Error(data.error);
@@ -280,7 +335,6 @@ async function sendMessage(imageData = null) {
             updateCredits();
         }
     } catch (error) {
-        console.error('Ошибка:', error);  // Для отладки
         document.getElementById('typing').classList.remove('active');
         addMessage('❌ Ошибка: ' + error.message, 'ai');
     } finally {
@@ -348,19 +402,44 @@ function handleFile(event) {
     reader.readAsDataURL(file);
 }
 
+// Исправленная функция оплаты с подпиской на 30 дней
 async function initPayment() {
     showToast('Создание платежа...');
+    
     try {
         const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
         localStorage.setItem('user_id', userId);
+        
+        // Жестко прописываем return_url для корректной работы в APK
+        const returnUrl = 'https://arharius.github.io/aura-pay/?payment=success';
+        
         const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-payment`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}` },
-            body: JSON.stringify({ amount: '990.00', description: 'Aura AI PRO', user_id: userId, return_url: window.location.href + '?payment=success' })
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${SUPABASE_KEY}` 
+            },
+            body: JSON.stringify({ 
+                user_id: userId, 
+                return_url: returnUrl 
+            })
         });
+        
         const data = await response.json();
-        if (data.confirmation_url) window.location.href = data.confirmation_url;
-    } catch (err) { showToast('Ошибка оплаты'); }
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        if (data.confirmation_url) {
+            window.location.href = data.confirmation_url;
+        } else {
+            throw new Error('Нет ссылки на оплату');
+        }
+        
+    } catch (err) { 
+        showToast('Ошибка оплаты: ' + err.message); 
+    }
 }
 
 function addMessage(content, type, image = null) {
@@ -381,76 +460,22 @@ function showPaywall() { document.getElementById('paywall').classList.add('activ
 function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
 
+// Обработка успешной оплаты (подписка на 30 дней)
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('payment') === 'success') {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+    
     localStorage.setItem('aura_pro', 'true');
+    localStorage.setItem('aura_pro_expiry', expiryDate.toISOString());
+    
     isPro = true;
     updateCredits();
-    showToast('✅ PRO активирован!');
+    showToast('✅ PRO активирован на 30 дней!');
+    
     window.history.replaceState({}, document.title, window.location.pathname);
 }
 </script>
-<!-- Заглушка оффлайн -->
-<div id="offline-screen" style="display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
-    <div style="font-size: 64px; margin-bottom: 20px;">📡</div>
-    <h2 style="margin-bottom: 12px; color: white;">Нет подключения</h2>
-    <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px; max-width: 300px;">Для работы Aura AI требуется интернет</p>
-    <button onclick="checkConnection()" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 24px; font-weight: bold; font-size: 16px; cursor: pointer;">Повторить</button>
-</div>
 
-<script>
-// Проверка интернета
-function updateOnlineStatus() {
-    const offlineScreen = document.getElementById('offline-screen');
-    const isOnline = navigator.onLine;
-    
-    if (!isOnline) {
-        offlineScreen.style.display = 'flex';
-        showToast('Связь потеряна');
-    } else {
-        offlineScreen.style.display = 'none';
-        // Если только что восстановились — показываем тост
-        if (offlineScreen.dataset.wasOffline === 'true') {
-            showToast('Подключение восстановлено');
-            offlineScreen.dataset.wasOffline = 'false';
-        }
-    }
-    
-    offlineScreen.dataset.wasOffline = (!isOnline).toString();
-}
-
-function checkConnection() {
-    showToast('Проверка...');
-    fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' })
-        .then(() => {
-            updateOnlineStatus();
-            if (navigator.onLine) showToast('✅ Интернет есть');
-        })
-        .catch(() => {
-            showToast('❌ Нет связи');
-        });
-}
-
-// Слушаем изменения статуса
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-
-// Проверяем при загрузке
-window.addEventListener('load', () => {
-    updateOnlineStatus();
-    // ... остальной код onload ...
-});
-
-// Модифицируем sendMessage для проверки перед отправкой
-const originalSendMessage = sendMessage;
-sendMessage = async function(imageData = null) {
-    if (!navigator.onLine) {
-        showToast('Нет интернета. Проверьте подключение.');
-        document.getElementById('offline-screen').style.display = 'flex';
-        return;
-    }
-    return originalSendMessage(imageData);
-};
-</script>
 </body>
 </html>
