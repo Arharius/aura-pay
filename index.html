@@ -390,6 +390,67 @@ if (urlParams.get('payment') === 'success') {
     window.history.replaceState({}, document.title, window.location.pathname);
 }
 </script>
+<!-- Заглушка оффлайн -->
+<div id="offline-screen" style="display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
+    <div style="font-size: 64px; margin-bottom: 20px;">📡</div>
+    <h2 style="margin-bottom: 12px; color: white;">Нет подключения</h2>
+    <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px; max-width: 300px;">Для работы Aura AI требуется интернет</p>
+    <button onclick="checkConnection()" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 24px; font-weight: bold; font-size: 16px; cursor: pointer;">Повторить</button>
+</div>
 
+<script>
+// Проверка интернета
+function updateOnlineStatus() {
+    const offlineScreen = document.getElementById('offline-screen');
+    const isOnline = navigator.onLine;
+    
+    if (!isOnline) {
+        offlineScreen.style.display = 'flex';
+        showToast('Связь потеряна');
+    } else {
+        offlineScreen.style.display = 'none';
+        // Если только что восстановились — показываем тост
+        if (offlineScreen.dataset.wasOffline === 'true') {
+            showToast('Подключение восстановлено');
+            offlineScreen.dataset.wasOffline = 'false';
+        }
+    }
+    
+    offlineScreen.dataset.wasOffline = (!isOnline).toString();
+}
+
+function checkConnection() {
+    showToast('Проверка...');
+    fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' })
+        .then(() => {
+            updateOnlineStatus();
+            if (navigator.onLine) showToast('✅ Интернет есть');
+        })
+        .catch(() => {
+            showToast('❌ Нет связи');
+        });
+}
+
+// Слушаем изменения статуса
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// Проверяем при загрузке
+window.addEventListener('load', () => {
+    updateOnlineStatus();
+    // ... остальной код onload ...
+});
+
+// Модифицируем sendMessage для проверки перед отправкой
+const originalSendMessage = sendMessage;
+sendMessage = async function(imageData = null) {
+    if (!navigator.onLine) {
+        showToast('Нет интернета. Проверьте подключение.');
+        document.getElementById('offline-screen').style.display = 'flex';
+        return;
+    }
+    return originalSendMessage(imageData);
+};
+</script>
 </body>
 </html>
