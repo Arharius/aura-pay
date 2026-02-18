@@ -153,11 +153,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ⚠️ ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ КЛЮЧ (anon public key из Supabase Settings > API)
+// ⚠️ Убедитесь что это ваш реальный Anon Key из Supabase (Project Settings > API)
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
 const CONFIG = {
-    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co,
+    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',  // ← ИСПРАВЛЕНО: убран пробел и запятая
     SUPABASE_KEY: SUPABASE_KEY,
     DAILY_LIMIT: 20,
     MODES: {
@@ -241,9 +241,15 @@ async function sendMessage(imageData = null) {
     document.getElementById('send-btn').disabled = true;
     
     try {
-        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
+        const url = `${CONFIG.SUPABASE_URL}/functions/v1/solve-task`;
+        console.log('Отправка на:', url);  // Для отладки
+        
+        const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            },
             body: JSON.stringify({
                 mode: currentMode,
                 message: text || 'Реши задачу на фото',
@@ -252,10 +258,20 @@ async function sendMessage(imageData = null) {
             })
         });
         
+        console.log('Статус ответа:', response.status);  // Для отладки
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Получены данные:', data);  // Для отладки
+        
         document.getElementById('typing').classList.remove('active');
         
         if (data.error) throw new Error(data.error);
+        if (!data.answer) throw new Error('Пустой ответ от сервера');
+        
         addMessage(data.answer, 'ai');
         
         if (!isPro) {
@@ -264,8 +280,9 @@ async function sendMessage(imageData = null) {
             updateCredits();
         }
     } catch (error) {
+        console.error('Ошибка:', error);  // Для отладки
         document.getElementById('typing').classList.remove('active');
-        addMessage('❌ Ошибка соединения. Проверьте интернет.', 'ai');
+        addMessage('❌ Ошибка: ' + error.message, 'ai');
     } finally {
         document.getElementById('send-btn').disabled = false;
     }
