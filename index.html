@@ -157,7 +157,7 @@
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
 const CONFIG = {
-    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
+    SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co,
     SUPABASE_KEY: SUPABASE_KEY,
     DAILY_LIMIT: 20,
     MODES: {
@@ -243,7 +243,7 @@ async function sendMessage(imageData = null) {
     try {
         const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
             body: JSON.stringify({
                 mode: currentMode,
                 message: text || 'Реши задачу на фото',
