@@ -1,0 +1,22 @@
+{
+  "name": "Aura AI - Решение ЦДЗ и ГДЗ",
+  "short_name": "Aura AI",
+  "description": "ИИ-репетитор для решения школьных задач по фото",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0e27",
+  "theme_color": "#0a0e27",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/6C5CE7/FFFFFF?text=A",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/6C5CE7/FFFFFF?text=AURA",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
