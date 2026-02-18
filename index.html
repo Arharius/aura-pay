@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0e27">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
     <title>Aura AI - Решение ЦДЗ</title>
     <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
     <style>
@@ -227,6 +234,13 @@ window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
 window.onload = () => {
+    // Регистрация Service Worker (PWA)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.log('SW error:', err));
+    }
+    
     updateOnlineStatus();
     const today = new Date().toDateString();
     messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
@@ -410,7 +424,6 @@ async function initPayment() {
         const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
         localStorage.setItem('user_id', userId);
         
-        // Жестко прописываем return_url для корректной работы в APK
         const returnUrl = 'https://arharius.github.io/aura-pay/?payment=success';
         
         const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-payment`, {
