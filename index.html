@@ -157,7 +157,7 @@
             <header>
                 <div class="logo">AURA AI</div>
                 <div style="display:flex;gap:10px;align-items:center;">
-                    <div class="credits" id="credits-display" onclick="toggleAdmin()">20/20</div>
+                    <div class="credits" id="credits-display" onclick="toggleAdminMode()">20/20</div>
                     <button onclick="clearChat()" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Очистить</button>
                 </div>
             </header>
@@ -237,31 +237,37 @@
         let currentMode = 'tutor';
         let messageCount = 0;
         let stream = null;
-        let isAdmin = localStorage.getItem('aura_admin') === 'true';
         let isPro = false;
+        let isAdmin = false; // По умолчанию ВЫКЛЮЧЕН
 
-        if (isAdmin) {
-            console.log('🔑 ADMIN MODE ACTIVE');
-        }
-
-        function checkProStatus() {
+        // Проверка статусов при загрузке
+        function initApp() {
+            // Проверка PRO
             const proExpiry = localStorage.getItem('aura_pro_expiry');
-            if (!proExpiry) return false;
-            const expiryDate = new Date(proExpiry);
-            if (new Date() > expiryDate) {
-                localStorage.removeItem('aura_pro');
-                localStorage.removeItem('aura_pro_expiry');
-                return false;
+            if (proExpiry) {
+                const expiryDate = new Date(proExpiry);
+                if (new Date() <= expiryDate) {
+                    isPro = true;
+                } else {
+                    localStorage.removeItem('aura_pro');
+                    localStorage.removeItem('aura_pro_expiry');
+                }
             }
-            return true;
+            
+            // Проверка Админа (только если явно включено)
+            if (localStorage.getItem('aura_admin') === 'true') {
+                isAdmin = true;
+                console.log('🔑 ADMIN MODE');
+            }
         }
 
-        isPro = checkProStatus();
+        initApp();
 
         function updateOnlineStatus() {
             const offlineScreen = document.getElementById('offline-screen');
-            const isOnline = navigator.onLine;
-            offlineScreen.style.display = isOnline ? 'none' : 'flex';
+            if (offlineScreen) {
+                offlineScreen.style.display = navigator.onLine ? 'none' : 'flex';
+            }
         }
 
         function checkConnection() {
@@ -277,17 +283,62 @@
         window.addEventListener('offline', updateOnlineStatus);
 
         window.addEventListener('beforeunload', function () {
-            const messages = document.getElementById('messages').innerHTML;
-            localStorage.setItem('aura_chat_backup', JSON.stringify({
-                html: messages,
-                mode: currentMode,
-                count: messageCount,
-                time: new Date().toISOString()
-            }));
+            const messagesEl = document.getElementById('messages');
+            if (messagesEl) {
+                localStorage.setItem('aura_chat_backup', JSON.stringify({
+                    html: messagesEl.innerHTML,
+                    mode: currentMode,
+                    count: messageCount,
+                    time: new Date().toISOString()
+                }));
+            }
         });
+
+        // БЕЗОПАСНЫЙ ПАРСИНГ JSON
+        function safeJSONParse(str) {
+            try {
+                return JSON.parse(str);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // ФОРМАТИРОВАНИЕ ОШИБОК (гарантированно без [object Object])
+        function formatError(error) {
+            if (!error) return 'Неизвестная ошибка';
+            
+            // Если строка
+            if (typeof error === 'string') return error;
+            
+            // Если есть message и это не [object Object]
+            if (error.message && typeof error.message === 'string' && error.message !== '[object Object]') {
+                return error.message;
+            }
+            
+            // Если есть error.error
+            if (error.error) {
+                if (typeof error.error === 'string') return error.error;
+                if (error.error.message) return error.error.message;
+                return JSON.stringify(error.error);
+            }
+            
+            // Если есть error.message от сервера Supabase
+            if (error.msg) return error.msg;
+            
+            // Последняя попытка - stringify с проверкой
+            try {
+                const str = JSON.stringify(error);
+                if (str !== '{}' && str !== '[object Object]') return str;
+                return 'Ошибка сервера. Попробуйте позже.';
+            } catch (e) {
+                return 'Ошибка соединения';
+            }
+        }
 
         function cleanLatex(text) {
             if (!text) return '';
+            if (typeof text !== 'string') text = String(text);
+            
             return text
                 .replace(/\\[\[\]\(\)]/g, '')
                 .replace(/\(([a-zA-Z0-9√\s]+)\/\(([a-zA-Z0-9√\s]+)\)\)/g, '$1/$2')
@@ -318,13 +369,15 @@
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
             }
 
+            // Восстановление чата
             const savedChat = localStorage.getItem('aura_chat_backup');
             if (savedChat) {
                 try {
                     const chatData = JSON.parse(savedChat);
                     const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
                     if (hoursDiff < 24 && chatData.html) {
-                        document.getElementById('messages').innerHTML = chatData.html;
+                        const messagesEl = document.getElementById('messages');
+                        if (messagesEl) messagesEl.innerHTML = chatData.html;
                     }
                 } catch (e) {
                     console.error('Error loading chat:', e);
@@ -332,71 +385,94 @@
             }
 
             updateOnlineStatus();
+            
+            // Счетчик сообщений
             const today = new Date().toDateString();
             messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
             updateCredits();
 
+            // Анимация загрузки
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 20;
-                document.getElementById('loader-bar').style.width = progress + '%';
+                const bar = document.getElementById('loader-bar');
+                if (bar) bar.style.width = progress + '%';
                 if (progress >= 100) {
                     clearInterval(interval);
                     setTimeout(() => {
-                        document.getElementById('splash').style.opacity = '0';
-                        setTimeout(() => document.getElementById('splash').remove(), 500);
-                        document.getElementById('app').classList.add('visible');
+                        const splash = document.getElementById('splash');
+                        if (splash) {
+                            splash.style.opacity = '0';
+                            setTimeout(() => splash.remove(), 500);
+                        }
+                        const app = document.getElementById('app');
+                        if (app) app.classList.add('visible');
                     }, 500);
                 }
             }, 200);
 
-            document.getElementById('msg-input').addEventListener('input', function () {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-            });
+            // Обработчики ввода
+            const msgInput = document.getElementById('msg-input');
+            if (msgInput) {
+                msgInput.addEventListener('input', function () {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
 
-            document.getElementById('msg-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
+                msgInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
         };
 
         function setMode(mode) {
             const modeConfig = CONFIG.MODES[mode];
+            if (!modeConfig) return;
+            
             if (!modeConfig.free && !isPro && !isAdmin) {
                 showPaywall();
                 return;
             }
             currentMode = mode;
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+            const tab = document.querySelector(`[data-mode="${mode}"]`);
+            if (tab) tab.classList.add('active');
         }
 
-        // ВЫХОД ИЗ АДМИНА (клик на бейдж ADMIN)
-        function toggleAdmin() {
+        // Переключение админа (вкл/выкл)
+        function toggleAdminMode() {
             if (isAdmin) {
                 localStorage.removeItem('aura_admin');
                 isAdmin = false;
                 showToast('🔒 ADMIN выключен');
-                updateCredits();
             } else {
-                showToast('ADMIN можно включить только через консоль');
+                // Для включения нужно ввести в консоль: localStorage.setItem('aura_admin', 'true')
+                showToast('Для включения ADMIN введите в консоль: localStorage.setItem("aura_admin", "true")');
             }
+            updateCredits();
         }
 
         async function sendMessage() {
             if (!navigator.onLine) {
                 showToast('Нет интернета');
-                document.getElementById('offline-screen').style.display = 'flex';
+                const offlineEl = document.getElementById('offline-screen');
+                if (offlineEl) offlineEl.style.display = 'flex';
                 return;
             }
 
             const input = document.getElementById('msg-input');
+            const sendBtn = document.getElementById('send-btn');
+            const typing = document.getElementById('typing');
+            
+            if (!input) return;
+            
             const text = input.value.trim();
             if (!text) return;
 
+            // Проверка лимита
             if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
                 showToast('Лимит 20 решений/день');
                 showPaywall();
@@ -409,10 +485,12 @@
             input.value = '';
             input.style.height = 'auto';
 
-            document.getElementById('typing').classList.add('active');
-            document.getElementById('send-btn').disabled = true;
+            if (typing) typing.classList.add('active');
+            if (sendBtn) sendBtn.disabled = true;
 
             try {
+                console.log('Отправка сообщения:', text);
+                
                 const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
                     method: 'POST',
                     headers: {
@@ -427,91 +505,126 @@
                     })
                 });
 
+                console.log('Статус ответа:', response.status);
+                
+                // Получаем текст ответа
+                const responseText = await response.text();
+                console.log('Текст ответа:', responseText);
+                
                 if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(errorData || `HTTP ${response.status}`);
+                    // Пытаемся распарсить как JSON
+                    const errorData = safeJSONParse(responseText) || { error: responseText || `HTTP ${response.status}` };
+                    throw errorData;
                 }
 
-                const data = await response.json();
-                document.getElementById('typing').classList.remove('active');
+                // Парсим успешный ответ
+                const data = safeJSONParse(responseText);
+                if (!data) {
+                    throw new Error('Неверный формат ответа сервера');
+                }
+                
+                if (typing) typing.classList.remove('active');
 
-                if (data.error) throw new Error(data.error);
+                if (data.error) {
+                    throw data;
+                }
+                
+                if (!data.answer) {
+                    throw new Error('Пустой ответ от сервера');
+                }
                 
                 addMessage(cleanLatex(data.answer), 'ai');
 
+                // Увеличиваем счетчик только для обычных пользователей
                 if (!isPro && !isAdmin) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
                     updateCredits();
                 }
-            } catch (error) {
-                document.getElementById('typing').classList.remove('active');
-                // ИСПРАВЛЕНИЕ: правильная обработка ошибки
-                let errorMsg = 'Ошибка сети';
-                if (typeof error === 'string') errorMsg = error;
-                else if (error?.message) errorMsg = error.message;
-                else if (error?.error) errorMsg = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
-                else try { errorMsg = JSON.stringify(error); } catch(e) {}
                 
-                addMessage('❌ Ошибка: ' + errorMsg, 'ai');
+            } catch (error) {
+                console.error('Ошибка sendMessage:', error);
+                if (typing) typing.classList.remove('active');
+                addMessage('❌ Ошибка: ' + formatError(error), 'ai');
             } finally {
-                document.getElementById('send-btn').disabled = false;
+                if (sendBtn) sendBtn.disabled = false;
             }
         }
 
         async function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
+            
+            if (!video || !canvas) return;
+            
             const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             closeCamera();
             
-            if (!isPro && !isAdmin && messageCount >= 20) {
+            // Проверка лимита
+            if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
                 showToast('Лимит 20 решений/день');
                 showPaywall();
                 return;
             }
 
             addMessage('[📷 Фото задачи]', 'user', imageData);
-            showToast('🔍 Думаю...');
-            document.getElementById('typing').classList.add('active');
+            showToast('🔍 Анализирую...');
+            
+            const typing = document.getElementById('typing');
+            if (typing) typing.classList.add('active');
 
             try {
+                console.log('Отправка фото...');
+                
                 const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${SUPABASE_KEY}`
                     },
-                    body: JSON.stringify({ imageBase64: imageData, mode: currentMode })
+                    body: JSON.stringify({ 
+                        imageBase64: imageData, 
+                        mode: currentMode 
+                    })
                 });
 
+                console.log('Статус ответа:', response.status);
+
                 if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(text || `HTTP ${response.status}`);
+                    const errorText = await response.text();
+                    const errorData = safeJSONParse(errorText) || { error: errorText || `HTTP ${response.status}` };
+                    throw errorData;
                 }
 
+                // Обработка потокового ответа (stream)
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                
+                // Создаем сообщение для потока
                 const msgDiv = document.createElement('div');
                 msgDiv.className = 'message ai';
-                msgDiv.innerHTML = '<em>Набираю ответ...</em>';
-                document.getElementById('messages').appendChild(msgDiv);
-                document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                msgDiv.innerHTML = '<em>Думаю...</em>';
+                const messagesEl = document.getElementById('messages');
+                if (messagesEl) messagesEl.appendChild(msgDiv);
                 
-                document.getElementById('typing').classList.remove('active');
-
-                const reader = response.body.getReader();
+                if (typing) typing.classList.remove('active');
+                
                 let fullText = '';
                 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
                     
-                    const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split('\n');
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Сохраняем неполную строку
+                    
                     for (const line of lines) {
                         if (line.startsWith('data:')) {
                             const jsonStr = line.replace('data:', '').trim();
@@ -519,19 +632,37 @@
                             
                             try {
                                 const parsed = JSON.parse(jsonStr);
-                                const content = parsed.choices?.[0]?.delta?.content || '';
+                                const content = parsed.choices?.[0]?.delta?.content || 
+                                               parsed.choices?.[0]?.text || 
+                                               parsed.content || '';
                                 if (content) {
                                     fullText += content;
                                     msgDiv.innerHTML = cleanLatex(fullText);
-                                    document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                                    const chatContainer = document.getElementById('chat-container');
+                                    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
                                 }
-                            } catch (e) {}
+                            } catch (e) {
+                                // Игнорируем битые JSON в потоке
+                            }
                         }
                     }
                 }
+                
+                // Финальная очистка
+                if (buffer.startsWith('data:')) {
+                    try {
+                        const jsonStr = buffer.replace('data:', '').trim();
+                        if (jsonStr !== '[DONE]') {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices?.[0]?.delta?.content || '';
+                            if (content) fullText += content;
+                        }
+                    } catch (e) {}
+                }
+                
+                msgDiv.innerHTML = cleanLatex(fullText) || '<em>Нет ответа</em>';
 
-                msgDiv.innerHTML = cleanLatex(fullText);
-
+                // Увеличиваем счетчик
                 if (!isPro && !isAdmin) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
@@ -539,15 +670,9 @@
                 }
 
             } catch (error) {
-                document.getElementById('typing').classList.remove('active');
-                // ИСПРАВЛЕНИЕ: правильная обработка ошибки
-                let errorMsg = 'Ошибка обработки фото';
-                if (typeof error === 'string') errorMsg = error;
-                else if (error?.message) errorMsg = error.message;
-                else if (error?.error) errorMsg = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
-                else try { errorMsg = JSON.stringify(error); } catch(e) {}
-                
-                addMessage('❌ Ошибка: ' + errorMsg, 'ai');
+                console.error('Ошибка takePhoto:', error);
+                if (typing) typing.classList.remove('active');
+                addMessage('❌ Ошибка: ' + formatError(error), 'ai');
             }
         }
 
@@ -557,19 +682,31 @@
                 showPaywall();
                 return;
             }
-            document.getElementById('camera-modal').classList.add('active');
+            
+            const modal = document.getElementById('camera-modal');
+            if (modal) modal.classList.add('active');
+            
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-                document.getElementById('camera-video').srcObject = stream;
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                const video = document.getElementById('camera-video');
+                if (video) video.srcObject = stream;
             } catch (err) {
+                console.error('Ошибка камеры:', err);
                 showToast('Нет доступа к камере');
                 closeCamera();
             }
         }
 
         function closeCamera() {
-            document.getElementById('camera-modal').classList.remove('active');
-            if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+            const modal = document.getElementById('camera-modal');
+            if (modal) modal.classList.remove('active');
+            if (stream) { 
+                stream.getTracks().forEach(track => track.stop()); 
+                stream = null; 
+            }
         }
 
         function handleFile(event) {
@@ -582,26 +719,23 @@
             }
             
             if (!file.type.startsWith('image/')) {
-                showToast('Поддерживаются только фото (JPG, PNG)');
+                showToast('Поддерживаются только фото');
                 return;
             }
             
             const reader = new FileReader();
-            
             reader.onload = (e) => {
                 processImage(e.target.result);
             };
-            
-            reader.onerror = (err) => {
-                console.error('FileReader error:', err);
+            reader.onerror = () => {
                 showToast('❌ Ошибка чтения файла');
             };
-            
             reader.readAsDataURL(file);
             event.target.value = '';
         }
 
         async function processImage(imageData) {
+            // Проверка лимита
             if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
                 showToast('Лимит 20 решений/день');
                 showPaywall();
@@ -609,11 +743,17 @@
             }
 
             addMessage('[📷 Фото из галереи]', 'user', imageData);
-            showToast('🔍 Анализирую фото...');
-            document.getElementById('typing').classList.add('active');
-            document.getElementById('send-btn').disabled = true;
+            showToast('🔍 Анализирую...');
+            
+            const typing = document.getElementById('typing');
+            const sendBtn = document.getElementById('send-btn');
+            
+            if (typing) typing.classList.add('active');
+            if (sendBtn) sendBtn.disabled = true;
 
             try {
+                console.log('Отправка изображения из галереи...');
+                
                 const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
                     method: 'POST',
                     headers: {
@@ -627,20 +767,69 @@
                     })
                 });
 
+                console.log('Статус ответа:', response.status);
+                
                 if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(text || `HTTP ${response.status}`);
+                    const errorText = await response.text();
+                    const errorData = safeJSONParse(errorText) || { error: errorText || `HTTP ${response.status}` };
+                    throw errorData;
                 }
                 
-                const data = await response.json();
-                document.getElementById('typing').classList.remove('active');
-                document.getElementById('send-btn').disabled = false;
+                // Обработка потока (так же как в takePhoto)
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
                 
-                if (data.error) throw new Error(data.error);
-                if (!data.answer) throw new Error('Пустой ответ от сервера');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message ai';
+                msgDiv.innerHTML = '<em>Думаю...</em>';
+                const messagesEl = document.getElementById('messages');
+                if (messagesEl) messagesEl.appendChild(msgDiv);
                 
-                const cleanAnswer = cleanLatex(data.answer);
-                addMessage(cleanAnswer, 'ai');
+                if (typing) typing.classList.remove('active');
+                if (sendBtn) sendBtn.disabled = false;
+                
+                let fullText = '';
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            const jsonStr = line.replace('data:', '').trim();
+                            if (jsonStr === '[DONE]') continue;
+                            
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                const content = parsed.choices?.[0]?.delta?.content || '';
+                                if (content) {
+                                    fullText += content;
+                                    msgDiv.innerHTML = cleanLatex(fullText);
+                                    const chatContainer = document.getElementById('chat-container');
+                                    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+                if (buffer.startsWith('data:')) {
+                    try {
+                        const jsonStr = buffer.replace('data:', '').trim();
+                        if (jsonStr !== '[DONE]') {
+                            const parsed = JSON.parse(jsonStr);
+                            const content = parsed.choices?.[0]?.delta?.content || '';
+                            if (content) fullText += content;
+                        }
+                    } catch (e) {}
+                }
+                
+                msgDiv.innerHTML = cleanLatex(fullText) || '<em>Нет ответа</em>';
 
                 if (!isPro && !isAdmin) {
                     messageCount++;
@@ -649,18 +838,11 @@
                 }
 
             } catch (error) {
-                document.getElementById('typing').classList.remove('active');
-                document.getElementById('send-btn').disabled = false;
-                
-                // ИСПРАВЛЕНИЕ: правильная обработка ошибки
-                let errorMsg = 'Не удалось решить';
-                if (typeof error === 'string') errorMsg = error;
-                else if (error?.message) errorMsg = error.message;
-                else if (error?.error) errorMsg = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
-                else try { errorMsg = JSON.stringify(error); } catch(e) {}
-                
-                addMessage('❌ Ошибка: ' + errorMsg, 'ai');
-                showToast('❌ Ошибка загрузки');
+                console.error('Ошибка processImage:', error);
+                if (typing) typing.classList.remove('active');
+                if (sendBtn) sendBtn.disabled = false;
+                addMessage('❌ Ошибка: ' + formatError(error), 'ai');
+                showToast('❌ Не удалось обработать');
             }
         }
 
@@ -682,31 +864,46 @@
                     })
                 });
 
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                if (data.confirmation_url) window.location.href = data.confirmation_url;
+                const responseText = await response.text();
+                const data = safeJSONParse(responseText) || {};
+                
+                if (!response.ok) {
+                    throw data.error || data.message || responseText || 'Ошибка создания платежа';
+                }
+                
+                if (data.confirmation_url) {
+                    window.location.href = data.confirmation_url;
+                } else {
+                    throw 'Не получена ссылка на оплату';
+                }
 
             } catch (err) {
-                showToast('Ошибка оплаты: ' + (err?.message || err));
+                console.error('Ошибка оплаты:', err);
+                showToast('Ошибка: ' + formatError(err));
             }
         }
 
         function addMessage(content, type, image = null) {
+            const messagesEl = document.getElementById('messages');
+            if (!messagesEl) return;
+            
             const div = document.createElement('div');
             div.className = `message ${type}`;
             
             if (image && type === 'user') {
-                div.innerHTML = `<img src="${image}" alt="Фото задачи">${content}`;
+                div.innerHTML = `<img src="${image}" alt="Фото задачи" style="max-width:100%;border-radius:8px;margin-bottom:8px;">${content}`;
             } else {
                 div.innerHTML = content;
             }
             
-            document.getElementById('messages').appendChild(div);
-            document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+            messagesEl.appendChild(div);
+            const chatContainer = document.getElementById('chat-container');
+            if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         function updateCredits() {
             const el = document.getElementById('credits-display');
+            if (!el) return;
             
             if (isAdmin) {
                 el.textContent = 'ADMIN';
@@ -724,15 +921,13 @@
                 return;
             }
             
-            const remaining = CONFIG.DAILY_LIMIT - messageCount;
+            const remaining = Math.max(0, CONFIG.DAILY_LIMIT - messageCount);
             el.textContent = `${remaining}/${CONFIG.DAILY_LIMIT}`;
             
             if (remaining <= 3) {
                 el.style.color = '#ff1744';
                 el.style.borderColor = '#ff1744';
                 el.style.background = 'rgba(255, 23, 68, 0.1)';
-                if (remaining === 3) showToast('⚠️ Осталось 3 решения!');
-                if (remaining === 1) showToast('⚠️ Последнее решение! Далее PRO.');
             } else if (remaining <= 5) {
                 el.style.color = '#ffa500';
                 el.style.borderColor = 'rgba(255, 165, 0, 0.5)';
@@ -743,22 +938,32 @@
             }
         }
 
-        function showPaywall() { document.getElementById('paywall').classList.add('active'); }
-        function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
+        function showPaywall() { 
+            const el = document.getElementById('paywall');
+            if (el) el.classList.add('active'); 
+        }
+        
+        function closePaywall() { 
+            const el = document.getElementById('paywall');
+            if (el) el.classList.remove('active'); 
+        }
         
         function showToast(msg) { 
             const t = document.getElementById('toast'); 
+            if (!t) return;
             t.textContent = msg; 
             t.classList.add('show'); 
             setTimeout(() => t.classList.remove('show'), 3000); 
         }
 
         function clearChat() {
-            if(confirm('Удалить всю историю чата? Счетчик сбросится на 20/20.')) {
-                localStorage.removeItem('aura_chat_backup');
-                localStorage.removeItem(`usage_${new Date().toDateString()}`);
-                
-                document.getElementById('messages').innerHTML = `
+            if(!confirm('Удалить всю историю чата? Счетчик останется прежним.')) return;
+            
+            localStorage.removeItem('aura_chat_backup');
+            
+            const messagesEl = document.getElementById('messages');
+            if (messagesEl) {
+                messagesEl.innerHTML = `
                     <div class="message ai" id="welcome-message">
                         <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
                         Бесплатно: 20 решений в день<br>
@@ -768,13 +973,12 @@
                         3. Получите пошаговое решение
                     </div>
                 `;
-                
-                messageCount = 0;
-                updateCredits();
-                showToast('✅ Чат очищен');
             }
+            
+            showToast('✅ Чат очищен');
         }
 
+        // Обработка успешной оплаты
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('payment') === 'success') {
             const expiryDate = new Date();
