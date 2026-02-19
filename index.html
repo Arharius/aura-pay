@@ -249,7 +249,7 @@
         }
 
         let isPro = checkProStatus();
-        const isAdmin = false; // Поменяй на true для тестирования без лимитов
+        const isAdmin = false;
 
         function updateOnlineStatus() {
             const offlineScreen = document.getElementById('offline-screen');
@@ -428,11 +428,18 @@
             }
         }
 
-        // ОТПРАВКА ФОТО (исправленная)
+        // ОТПРАВКА ФОТО (ИСПРАВЛЕННАЯ)
         async function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
             const ctx = canvas.getContext('2d');
+            
+            // Проверяем, что видео работает
+            if (!video.videoWidth || !video.videoHeight) {
+                showToast('❌ Камера не готова');
+                return;
+            }
+            
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
@@ -440,10 +447,18 @@
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             closeCamera();
             
+            console.log('Фото с камеры, размер:', imageData.length);
             await processImage(imageData, '[📷 Фото с камеры]');
         }
 
         async function processImage(imageData, caption) {
+            // Проверка что фото реально загружено
+            if (!imageData || imageData.length < 100) {
+                console.error('Фото пустое или слишком короткое:', imageData);
+                showToast('❌ Ошибка: фото не загружено');
+                return;
+            }
+            
             if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
                 showToast('Лимит 20 решений/день');
                 showPaywall();
@@ -457,17 +472,21 @@
             document.getElementById('send-btn').disabled = true;
 
             try {
+                const payload = {
+                    imageBase64: imageData, // ВАЖНО: используем imageBase64 как ожидает бэкенд
+                    mode: currentMode,
+                    user_pro: isPro || isAdmin
+                };
+                
+                console.log('Отправка на сервер, длина фото:', imageData.length);
+                
                 const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${SUPABASE_KEY}`
                     },
-                    body: JSON.stringify({
-                        image: imageData, // ВАЖНО: поле называется image, не imageBase64
-                        prompt: 'Реши эту задачу пошагово с объяснениями',
-                        mode: currentMode
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 document.getElementById('typing').classList.remove('active');
@@ -563,6 +582,7 @@
             const reader = new FileReader();
             
             reader.onload = (e) => {
+                console.log('Файл загружен, размер:', e.target.result.length);
                 processImage(e.target.result, '[📷 Фото из галереи]');
             };
             
