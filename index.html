@@ -9,6 +9,24 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
+    <!-- Принудительное обновление PWA -->
+<script>
+  // Проверяем версию приложения
+  const CURRENT_VERSION = '1.1';
+  const savedVersion = localStorage.getItem('aura_app_version');
+  
+  if (savedVersion !== CURRENT_VERSION) {
+    // Если версия изменилась, очищаем кэш и перезагружаем
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+    localStorage.setItem('aura_app_version', CURRENT_VERSION);
+    // Перезагружаем страницу с обновлением
+    window.location.reload(true);
+  }
+</script>
     <link rel="manifest" href="manifest.json">
     <title>Aura AI - Решение ЦДЗ</title>
     <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
@@ -567,10 +585,15 @@
     </div>
 
     <div class="app" id="app">
-        <header>
-            <div class="logo">AURA AI</div>
-            <div class="credits" id="credits-display">20/20</div>
-        </header>
+       <header>
+  <div class="logo">AURA AI</div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div class="credits" id="credits-display">20/20</div>
+    <button onclick="clearChat()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+      🗑️ <span style="display:none;">Очистить</span>
+    </button>
+  </div>
+</header>
         <div class="mode-tabs">
             <div class="mode-tab active" onclick="setMode('tutor')" data-mode="tutor">📚 Решение задач</div>
             <div class="mode-tab pro" onclick="setMode('lawyer')" data-mode="lawyer">⚖️ Юрист</div>
@@ -608,6 +631,39 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // ОЧИСТКА ЧАТА
+function clearChat() {
+  if(confirm('Удалить всю историю чата? Это действие нельзя отменить.')) {
+    // Очищаем localStorage
+    localStorage.removeItem('aura_chat_backup');
+    localStorage.removeItem(`usage_${new Date().toDateString()}`);
+    
+    // Очищаем DOM
+    const messages = document.getElementById('messages');
+    messages.innerHTML = `
+      <div class="message ai" id="welcome-message">
+        <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+        Бесплатно: 20 решений в день<br>
+        PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
+        1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+        2. Или напишите текст вручную<br>
+        3. Получите пошаговое решение
+      </div>
+    `;
+    
+    // Сброс счетчика
+    messageCount = 0;
+    updateCredits();
+    
+    showToast('✅ Чат очищен');
+  }
+}
+
+// Очистка всего (для обновления)
+function hardReset() {
+  localStorage.clear();
+  location.reload();
+}
         // БЛОКИРОВКА PULL-TO-REFRESH
         (function () {
             let startY = 0;
