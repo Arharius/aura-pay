@@ -2,314 +2,667 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
+    <link rel="manifest" href="manifest.json">
+    <title>Aura AI - Решение ЦДЗ</title>
+    
+    <!-- УБРАН Tesseract.js -->
+    
     <style>
-        :root { --bg: #0a0e27; --accent: #00d4ff; --pro: #ffd700; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); color: white; height: 100vh; overflow: hidden; }
-        .app { max-width: 600px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; }
-        header { padding: 12px 16px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo { font-weight: 900; font-size: 20px; background: linear-gradient(135deg, var(--accent), #7000ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .credits { font-size: 12px; background: rgba(0,212,255,0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0,212,255,0.3); cursor: pointer; }
-        .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 200px; }
-        .message { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 12px; word-wrap: break-word; font-size: 15px; line-height: 1.5; }
-        .message.user { background: linear-gradient(135deg, var(--accent), #7000ff); margin-left: auto; border-bottom-right-radius: 4px; }
-        .message.ai { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
-        .message img { max-width: 100%; border-radius: 8px; margin-bottom: 8px; display: block; }
-        .input-area { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10,14,39,0.98); padding: 12px 16px 24px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .buttons { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; }
-        button { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; white-space: nowrap; }
-        button:active { background: rgba(255,255,255,0.2); }
-        .input-row { display: flex; gap: 8px; }
-        textarea { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 12px 16px; color: white; resize: none; height: 48px; font-family: inherit; }
-        .send { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: #000; font-size: 20px; display: flex; align-items: center; justify-content: center; padding: 0; }
-        #file-input { display: none; }
-        .typing { display: none; padding: 12px 16px; color: rgba(255,255,255,0.6); font-style: italic; }
-        .typing.active { display: block; }
-        .modal { display: none; position: fixed; inset: 0; background: black; z-index: 1000; flex-direction: column; }
+        :root {
+            --bg: #0a0e27;
+            --card: rgba(255, 255, 255, 0.05);
+            --accent: #00d4ff;
+            --accent2: #7000ff;
+            --pro: #ffd700;
+            --max-width: 600px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        html, body { overscroll-behavior-y: none; touch-action: pan-y; height: 100%; overflow: hidden; width: 100%; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); }
+        body { color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; }
+        
+        .app-container { width: 100%; max-width: var(--max-width); height: 100vh; position: relative; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        #splash { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .splash-logo { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .loader { width: 200px; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden; margin-top: 20px; }
+        .loader-bar { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s; }
+        
+        .app { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.3s; overflow: hidden; position: relative; }
+        .app.visible { opacity: 1; }
+        
+        header { padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .logo { font-weight: 900; font-size: 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .credits { font-size: 12px; color: var(--accent); background: rgba(0, 212, 255, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 212, 255, 0.3); }
+        
+        .mode-tabs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; }
+        .mode-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .mode-tab.active { background: rgba(0, 212, 255, 0.2); color: var(--accent); border-color: var(--accent); }
+        .mode-tab.pro { opacity: 0.6; }
+        
+        .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 180px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .chat-container { display: flex; flex-direction: column; gap: 12px; }
+        
+        .message { max-width: 90%; padding: 14px 18px; border-radius: 18px; font-size: 15px; line-height: 1.6; animation: messageIn 0.3s ease-out; word-wrap: break-word; }
+        @keyframes messageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.ai { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.1); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message img { max-width: 100%; border-radius: 8px; margin: 8px 0; max-height: 300px; object-fit: contain; display: block; }
+        
+        .message.ai strong { color: var(--accent); }
+        .message.ai .answer-box { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--pro); padding: 10px; border-radius: 8px; margin-top: 10px; display: inline-block; color: var(--pro); font-weight: bold; }
+        
+        .input-container { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10, 14, 39, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 16px 24px 16px; z-index: 100; }
+        .input-actions { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .action-btn { background: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 8px 14px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+        .action-btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.2); }
+        .action-btn.clear { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border-color: rgba(255, 107, 107, 0.3); }
+        
+        .input-wrapper { display: flex; gap: 10px; align-items: flex-end; background: rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 8px 16px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .message-input { flex: 1; background: none; border: none; color: white; font-size: 15px; padding: 8px 0; max-height: 120px; resize: none; font-family: inherit; outline: none; }
+        .message-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+        .send-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: none; color: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; flex-shrink: 0; }
+        .send-btn:disabled { opacity: 0.3; background: #666; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 1000; flex-direction: column; }
         .modal.active { display: flex; }
-        .camera-preview { flex: 1; position: relative; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .camera-btn { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: white; border: 4px solid rgba(0,0,0,0.3); cursor: pointer; }
-        .close-btn { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: none; }
+        .camera-preview { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
+        .camera-preview video, .camera-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .camera-controls { padding: 20px; display: flex; justify-content: center; gap: 30px; background: rgba(0, 0, 0, 0.8); }
+        .camera-btn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 4px solid rgba(255, 255, 255, 0.3); cursor: pointer; }
+        .close-modal { position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; z-index: 10; }
+        
+        .paywall { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.98); z-index: 2000; display: none; flex-direction: column; padding: 24px; overflow-y: auto; }
+        .paywall.active { display: flex; }
+        .paywall-title { font-size: 28px; font-weight: 900; margin-bottom: 8px; color: var(--pro); text-align: center; }
+        .pricing-card { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 24px; margin-bottom: 16px; border-color: var(--pro); background: rgba(255, 215, 0, 0.05); }
+        .price { font-size: 32px; font-weight: 900; margin: 12px 0; }
+        .price-features { list-style: none; font-size: 14px; color: rgba(255, 255, 255, 0.8); margin: 16px 0; }
+        .price-features li { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .buy-btn { width: 100%; padding: 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--pro), #ffed4e); color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
+        
+        .typing-indicator { display: none; align-self: flex-start; background: var(--card); padding: 12px 18px; border-radius: 18px; border-bottom-left-radius: 4px; align-items: center; gap: 8px; color: rgba(255, 255, 255, 0.6); }
+        .typing-indicator.active { display: flex; }
+        .typing-dots { display: flex; gap: 4px; }
+        .typing-dots span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        
+        .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(0, 0, 0, 0.9); color: white; padding: 12px 24px; border-radius: 24px; font-size: 14px; z-index: 3000; transition: transform 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        
+        #file-input { display: none; }
+        #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        
+        .content, .chat-container { user-select: none; -webkit-user-select: none; }
+        .message { user-select: text; -webkit-user-select: text; }
+        
+        @media (min-width: 601px) {
+            body { background: #050817; }
+            .app-container { border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
+        }
+        
+        #disclaimer-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2500; flex-direction:column; padding:24px; overflow-y:auto; }
     </style>
 </head>
 <body>
-    <div class="app">
-        <header>
-            <div class="logo">AURA AI</div>
-            <div style="display:flex;gap:10px;align-items:center;">
-                <div class="credits" id="credits" onclick="toggleAdmin()">20/20</div>
-                <button onclick="clearChat()" style="background:rgba(255,100,100,0.2);color:#ff6b6b;">Очистить</button>
-            </div>
-        </header>
-        
-        <div class="content" id="chat">
-            <div class="message ai">
-                <b>📸 Решение задач по фото</b><br><br>
-                Отправьте фото задачи или введите текст<br>
-                Бесплатно: 20 решений в день
+
+    <div class="app-container">
+        <div id="offline-screen">
+            <div style="font-size: 64px; margin-bottom: 20px;">📡</div>
+            <h2 style="margin-bottom: 12px; color: white;">Нет подключения</h2>
+            <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px; max-width: 300px;">Для работы Aura AI требуется интернет</p>
+            <button onclick="checkConnection()" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 24px; font-weight: bold; font-size: 16px; cursor: pointer;">Повторить</button>
+        </div>
+
+        <div id="splash">
+            <div class="splash-logo">AURA AI</div>
+            <div style="color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 10px;">Решение ЦДЗ и ГДЗ по фото</div>
+            <div class="loader">
+                <div class="loader-bar" id="loader-bar"></div>
             </div>
         </div>
-        
-        <div class="typing" id="typing">Решаю...</div>
-        
-        <div class="input-area">
-            <div class="buttons">
-                <button onclick="startCamera()">📷 Камера</button>
-                <button onclick="document.getElementById('file-input').click()">📎 Галерея</button>
-                <button onclick="buyPro()">⭐ PRO</button>
+
+        <div class="modal" id="camera-modal">
+            <button class="close-modal" onclick="closeCamera()">✕</button>
+            <div class="camera-preview">
+                <video id="camera-video" autoplay playsinline></video>
+                <canvas id="camera-canvas" style="display:none;"></canvas>
             </div>
-            <div class="input-row">
-                <textarea id="input" placeholder="Введите задачу..." rows="1"></textarea>
-                <button class="send" onclick="sendText()">➤</button>
+            <div class="camera-controls">
+                <button class="camera-btn" onclick="takePhoto()"></button>
             </div>
         </div>
-        
-        <input type="file" id="file-input" accept="image/*" onchange="handleFile(this)">
-    </div>
-    
-    <div class="modal" id="camera-modal">
-        <div class="camera-preview">
-            <video id="video" autoplay playsinline></video>
-            <button class="camera-btn" onclick="takePhoto()"></button>
-            <button class="close-btn" onclick="stopCamera()">✕</button>
+
+        <div class="paywall" id="paywall">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div class="paywall-title">👑 PRO Версия</div>
+                <div style="color: rgba(255,255,255,0.6);">Разблокируйте все возможности</div>
+            </div>
+            <div class="pricing-card">
+                <div style="font-size: 18px; font-weight: 700; color: var(--pro);">PRO Доступ</div>
+                <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">30 дней</span></div>
+                <ul class="price-features">
+                    <li>✅ Безлимитное решение задач</li>
+                    <li>✅ Юрист (сложные консультации)</li>
+                    <li>✅ Психолог (глубокая терапия)</li>
+                    <li>✅ Распознавание рукописи</li>
+                </ul>
+                <button class="buy-btn" onclick="initPayment()">Купить PRO</button>
+            </div>
+            <button onclick="closePaywall()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 12px; width: 100%;">Продолжить бесплатно (20/день)</button>
         </div>
+
+        <div class="app" id="app">
+            <header>
+                <div class="logo">AURA AI</div>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <div class="credits" id="credits-display">20/20</div>
+                    <button onclick="clearChat()" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Очистить</button>
+                </div>
+            </header>
+            <div class="mode-tabs">
+                <div class="mode-tab active" onclick="setMode('tutor')" data-mode="tutor">📚 Решение задач</div>
+                <div class="mode-tab pro" onclick="setMode('lawyer')" data-mode="lawyer">⚖️ Юрист</div>
+                <div class="mode-tab pro" onclick="setMode('psych')" data-mode="psych">🧠 Психолог</div>
+            </div>
+            <div class="content" id="chat-container">
+                <div class="chat-container" id="messages">
+                    <div class="message ai" id="welcome-message">
+                        <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+                        Бесплатно: 20 решений в день<br>
+                        PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
+                        1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+                        2. AI решит её за 10 секунд<br>
+                        3. Получите пошаговое решение
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typing">
+                    <span>Решаю...</span>
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
+            </div>
+            <div class="input-container">
+                <div class="input-actions">
+                    <button class="action-btn" onclick="openCamera()">📷 Камера</button>
+                    <button class="action-btn" onclick="document.getElementById('file-input').click()">📎 Файл</button>
+                    <button class="action-btn" onclick="showPaywall()">⭐ PRO</button>
+                    <button class="action-btn clear" onclick="clearChat()">🗑️ Очистить</button>
+                </div>
+                <div class="input-wrapper">
+                    <textarea class="message-input" id="msg-input" placeholder="Или введите задачу текстом..." rows="1"></textarea>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+            <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)">
+        </div>
+        <div class="toast" id="toast"></div>
     </div>
 
     <script>
-        const API_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co/functions/v1';
-        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
-        
-        let isAdmin = localStorage.getItem('admin') === 'true';
-        let isPro = localStorage.getItem('pro') === 'true';
-        let messageCount = parseInt(localStorage.getItem('count_' + new Date().toDateString()) || '0');
+        // БЛОКИРОВКА PULL-TO-REFRESH
+        (function () {
+            let startY = 0;
+            document.addEventListener('touchstart', function (e) {
+                if (e.touches.length === 1) startY = e.touches[0].clientY;
+            }, { passive: true });
+
+            document.addEventListener('touchmove', function (e) {
+                if (e.touches.length !== 1) return;
+                const y = e.touches[0].clientY;
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                if (scrollTop <= 0 && y > startY) {
+                    e.preventDefault();
+                    return false;
+                }
+            }, { passive: false });
+
+            document.body.style.overscrollBehavior = 'none';
+        })();
+
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
+
+        const CONFIG = {
+            SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
+            SUPABASE_KEY: SUPABASE_KEY,
+            DAILY_LIMIT: 20,
+            MODES: {
+                tutor: { name: 'Репетитор', free: true, system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй простым языком. Используй только эти символы для формул: √, °, ∠, ², ³, ×, ÷. Никакого LaTeX (без \\frac, \\sqrt). Ответ выдели словом "Ответ:".' },
+                lawyer: { name: 'Юрист', free: false, system: 'Ты старший юрист с 15-летним стажем в РФ. Давай ДЕТАЛЬНЫЕ консультации с конкретными статьями ГК РФ, НК РФ, ТК РФ. Давай сроки и стратегии.' },
+                psych: { name: 'Психолог', free: false, system: 'Ты клинический психолог, специалист по КПТ. Проводи терапию: давай домашние задания, дневники мыслей, техники самопомощи. Глубинная работа.' }
+            }
+        };
+
+        let currentMode = 'tutor';
+        let messageCount = 0;
         let stream = null;
-        
-        updateCredits();
-        
-        function updateCredits() {
-            const el = document.getElementById('credits');
-            if (isAdmin) el.textContent = 'ADMIN';
-            else if (isPro) el.textContent = '∞';
-            else el.textContent = (20 - messageCount) + '/20';
+
+        function checkProStatus() {
+            const proExpiry = localStorage.getItem('aura_pro_expiry');
+            if (!proExpiry) return false;
+            const expiryDate = new Date(proExpiry);
+            if (new Date() > expiryDate) {
+                localStorage.removeItem('aura_pro');
+                localStorage.removeItem('aura_pro_expiry');
+                return false;
+            }
+            return true;
         }
-        
-        function toggleAdmin() {
-            if (isAdmin) {
-                localStorage.removeItem('admin');
-                isAdmin = false;
-                alert('Admin выключен');
+
+        let isPro = checkProStatus();
+
+        function updateOnlineStatus() {
+            const offlineScreen = document.getElementById('offline-screen');
+            const isOnline = navigator.onLine;
+            offlineScreen.style.display = isOnline ? 'none' : 'flex';
+        }
+
+        function checkConnection() {
+            if (navigator.onLine) {
+                updateOnlineStatus();
+                showToast('✅ Интернет есть');
             } else {
-                localStorage.setItem('admin', 'true');
-                isAdmin = true;
-                alert('Admin включен');
+                showToast('❌ Нет связи');
             }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        window.addEventListener('beforeunload', function () {
+            const messages = document.getElementById('messages').innerHTML;
+            localStorage.setItem('aura_chat_backup', JSON.stringify({
+                html: messages,
+                mode: currentMode,
+                count: messageCount,
+                time: new Date().toISOString()
+            }));
+        });
+
+        function cleanLatex(text) {
+            return text
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+                .replace(/\\sqrt/g, '√')
+                .replace(/\\angle/g, '∠')
+                .replace(/\\degrees?/g, '°')
+                .replace(/\\cdot|\\times/g, '×')
+                .replace(/\\div/g, '÷')
+                .replace(/\\pi/g, 'π')
+                .replace(/\\alpha/g, 'α')
+                .replace(/\\beta/g, 'β')
+                .replace(/\\gamma/g, 'γ')
+                .replace(/\\leq/g, '≤')
+                .replace(/\\geq/g, '≥')
+                .replace(/\\neq/g, '≠')
+                .replace(/\\approx/g, '≈')
+                .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
+                .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
+                .replace(/\^\{?(\d+)\}?/g, '<sup>$1</sup>')
+                .replace(/\n/g, '<br>')
+                .trim();
+        }
+
+        window.onload = () => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+            }
+
+            const savedChat = localStorage.getItem('aura_chat_backup');
+            if (savedChat) {
+                const chatData = JSON.parse(savedChat);
+                const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
+                if (hoursDiff < 24 && chatData.html) {
+                    document.getElementById('messages').innerHTML = chatData.html;
+                }
+            }
+
+            updateOnlineStatus();
+            const today = new Date().toDateString();
+            messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
             updateCredits();
-        }
-        
-        function addMessage(text, isUser, imageUrl = null) {
-            const chat = document.getElementById('chat');
-            const div = document.createElement('div');
-            div.className = 'message ' + (isUser ? 'user' : 'ai');
-            
-            if (imageUrl) {
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                div.appendChild(img);
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                document.getElementById('loader-bar').style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('splash').style.opacity = '0';
+                        setTimeout(() => document.getElementById('splash').remove(), 500);
+                        document.getElementById('app').classList.add('visible');
+                    }, 500);
+                }
+            }, 200);
+
+            document.getElementById('msg-input').addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            document.getElementById('msg-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        };
+
+        function setMode(mode) {
+            const modeConfig = CONFIG.MODES[mode];
+            if (!modeConfig.free && !isPro) {
+                showPaywall();
+                return;
             }
-            
-            const span = document.createElement('span');
-            span.textContent = text;
-            div.appendChild(span);
-            
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
         }
-        
-        async function sendText() {
-            const input = document.getElementById('input');
+
+        // ОТПРАВКА ТЕКСТОМ (через старый solve-task)
+        async function sendMessage() {
+            if (!navigator.onLine) {
+                showToast('Нет интернета');
+                document.getElementById('offline-screen').style.display = 'flex';
+                return;
+            }
+
+            const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if (!text) return;
-            
-            if (!isPro && !isAdmin && messageCount >= 20) {
-                alert('Лимит исчерпан');
+
+            if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
                 return;
             }
-            
-            addMessage(text, true);
+
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            addMessage(text, 'user');
             input.value = '';
-            
+            input.style.height = 'auto';
+
             document.getElementById('typing').classList.add('active');
-            
+            document.getElementById('send-btn').disabled = true;
+
             try {
-                const res = await fetch(API_URL + '/solve-task', {
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + API_KEY
-                    },
-                    body: JSON.stringify({message: text, mode: 'tutor'})
-                });
-                
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error);
-                
-                addMessage(data.answer || 'Нет ответа', false);
-                
-                if (!isPro && !isAdmin) {
-                    messageCount++;
-                    localStorage.setItem('count_' + new Date().toDateString(), messageCount);
-                    updateCredits();
-                }
-            } catch (e) {
-                addMessage('❌ Ошибка: ' + e.message, false);
-            } finally {
-                document.getElementById('typing').classList.remove('active');
-            }
-        }
-        
-        // ============ ФОТО ============
-        
-        async function startCamera() {
-            document.getElementById('camera-modal').classList.add('active');
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
-                document.getElementById('video').srcObject = stream;
-            } catch(e) {
-                alert('Нет доступа к камере');
-                stopCamera();
-            }
-        }
-        
-        function stopCamera() {
-            document.getElementById('camera-modal').classList.remove('active');
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                stream = null;
-            }
-        }
-        
-        function takePhoto() {
-            const video = document.getElementById('video');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            stopCamera();
-            sendPhoto(imageData);
-        }
-        
-        function handleFile(input) {
-            const file = input.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (e) => sendPhoto(e.target.result);
-            reader.readAsDataURL(file);
-            input.value = '';
-        }
-        
-        async function sendPhoto(imageBase64) {
-            if (!isPro && !isAdmin && messageCount >= 20) {
-                alert('Лимит исчерпан');
-                return;
-            }
-            
-            addMessage('📷 Фото задачи', true, imageBase64);
-            document.getElementById('typing').classList.add('active');
-            
-            try {
-                console.log('Отправка фото...');
-                
-                // ИСПРАВЛЕНО: правильный endpoint и формат
-                const res = await fetch(API_URL + '/solve-vision', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + API_KEY
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
                     },
                     body: JSON.stringify({
-                        imageBase64: imageBase64,
-                        mode: 'tutor'
+                        mode: currentMode,
+                        message: text,
+                        system: CONFIG.MODES[currentMode].system,
+                        user_pro: isPro
                     })
                 });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
+
+                if (data.error) throw new Error(data.error);
                 
-                console.log('Статус:', res.status);
-                
-                // Проверяем, JSON ли это или текст
-                const contentType = res.headers.get('content-type');
-                let data;
-                
-                if (contentType && contentType.includes('application/json')) {
-                    data = await res.json();
-                    console.log('JSON ответ:', data);
-                } else {
-                    // Если сервер вернул текст (например, поток)
-                    const text = await res.text();
-                    console.log('Текстовый ответ:', text);
-                    
-                    // Пытаемся найти JSON в тексте
-                    try {
-                        const lines = text.split('\n');
-                        let result = '';
-                        for (const line of lines) {
-                            if (line.startsWith('data:')) {
-                                const json = line.replace('data:', '').trim();
-                                if (json && json !== '[DONE]') {
-                                    const parsed = JSON.parse(json);
-                                    const content = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.text || '';
-                                    result += content;
-                                }
-                            }
-                        }
-                        data = {answer: result || text};
-                    } catch(e) {
-                        data = {answer: text};
-                    }
+                addMessage(cleanLatex(data.answer), 'ai');
+
+                if (!isPro) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
                 }
-                
-                if (!res.ok) {
-                    throw new Error(data.error || data.message || 'Ошибка сервера: ' + res.status);
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                addMessage('❌ Ошибка: ' + error.message, 'ai');
+            } finally {
+                document.getElementById('send-btn').disabled = false;
+            }
+        }
+
+        // ОТПРАВКА ФОТО (через новый solve-vision)
+        async function takePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            closeCamera();
+            
+            if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            // Показываем фото в чате
+            addMessage('[📷 Фото задачи]', 'user', imageData);
+            
+            showToast('🔍 Анализирую фото...');
+            document.getElementById('typing').classList.add('active');
+
+            try {
+                // Отправляем в Supabase Edge Function (OpenRouter)
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        imageBase64: imageData,
+                        mode: currentMode,
+                        user_pro: isPro
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка сервера');
                 }
+
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
+
+                if (data.error) throw new Error(data.error);
+                
+                addMessage(cleanLatex(data.answer), 'ai');
+
+                if (!isPro) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
+                }
+
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                console.error(error);
+                addMessage('❌ Не удалось распознать фото. Попробуйте написать текстом: ' + error.message, 'ai');
+            }
+        }
+
+        async function openCamera() {
+            if (currentMode !== 'tutor' && !isPro) {
+                showToast('Камера доступна в режиме Репетитора или PRO');
+                showPaywall();
+                return;
+            }
+            document.getElementById('camera-modal').classList.add('active');
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                document.getElementById('camera-video').srcObject = stream;
+            } catch (err) {
+                showToast('Нет доступа к камере');
+                closeCamera();
+            }
+        }
+
+        function closeCamera() {
+            document.getElementById('camera-modal').classList.remove('active');
+            if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+        }
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой (макс 5MB)'); return; }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Для файлов используем тот же механизм, что и для камеры
+                if (file.type.startsWith('image/')) {
+                    processImage(e.target.result);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(imageData) {
+            if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            addMessage('[📷 Фото из галереи]', 'user', imageData);
+            
+            showToast('🔍 Анализирую...');
+            document.getElementById('typing').classList.add('active');
+
+            try {
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        imageBase64: imageData,
+                        mode: currentMode,
+                        user_pro: isPro
+                    })
+                });
+
+                if (!response.ok) throw new Error('Ошибка сервера');
+
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
                 
                 if (data.error) throw new Error(data.error);
                 
-                addMessage(data.answer || data.result || data.text || 'Готово!', false);
-                
-                if (!isPro && !isAdmin) {
+                addMessage(cleanLatex(data.answer), 'ai');
+
+                if (!isPro) {
                     messageCount++;
-                    localStorage.setItem('count_' + new Date().toDateString(), messageCount);
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
                     updateCredits();
                 }
-                
-            } catch (e) {
-                console.error('Ошибка:', e);
-                addMessage('❌ Ошибка: ' + e.message, false);
-            } finally {
+            } catch (error) {
                 document.getElementById('typing').classList.remove('active');
+                addMessage('❌ Ошибка: ' + error.message, 'ai');
             }
         }
+
+        async function initPayment() {
+            showToast('Создание платежа...');
+            try {
+                const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
+                localStorage.setItem('user_id', userId);
+
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        return_url: 'https://arharius.github.io/aura-pay/?payment=success'
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                if (data.confirmation_url) window.location.href = data.confirmation_url;
+
+            } catch (err) {
+                showToast('Ошибка оплаты: ' + err.message);
+            }
+        }
+
+        function addMessage(content, type, image = null) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            
+            if (image && type === 'user') {
+                div.innerHTML = `<img src="${image}" alt="Фото задачи">${content}`;
+            } else {
+                div.innerHTML = content;
+            }
+            
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+        }
+
+        function updateCredits() {
+            const el = document.getElementById('credits-display');
+            el.textContent = isPro ? '∞/∞' : `${CONFIG.DAILY_LIMIT - messageCount}/${CONFIG.DAILY_LIMIT}`;
+            if (!isPro && messageCount >= 15) el.style.color = '#ff1744';
+        }
+
+        function showPaywall() { document.getElementById('paywall').classList.add('active'); }
+        function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
         
+        function showToast(msg) { 
+            const t = document.getElementById('toast'); 
+            t.textContent = msg; 
+            t.classList.add('show'); 
+            setTimeout(() => t.classList.remove('show'), 3000); 
+        }
+
         function clearChat() {
-            document.getElementById('chat').innerHTML = '<div class="message ai"><b>📸 Решение задач по фото</b><br><br>Отправьте фото задачи или введите текст</div>';
-        }
-        
-        function buyPro() {
-            alert('Переход к оплате...');
-        }
-        
-        // Enter для отправки
-        document.getElementById('input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendText();
+            if(confirm('Удалить всю историю чата? Счетчик сбросится на 20/20.')) {
+                localStorage.removeItem('aura_chat_backup');
+                localStorage.removeItem(`usage_${new Date().toDateString()}`);
+                
+                document.getElementById('messages').innerHTML = `
+                    <div class="message ai" id="welcome-message">
+                        <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+                        Бесплатно: 20 решений в день<br>
+                        PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
+                        1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+                        2. AI решит её за 10 секунд<br>
+                        3. Получите пошаговое решение
+                    </div>
+                `;
+                
+                messageCount = 0;
+                updateCredits();
+                showToast('✅ Чат очищен');
             }
-        });
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            localStorage.setItem('aura_pro', 'true');
+            localStorage.setItem('aura_pro_expiry', expiryDate.toISOString());
+            isPro = true;
+            updateCredits();
+            showToast('✅ PRO активирован на 30 дней!');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
     </script>
 </body>
 </html>
