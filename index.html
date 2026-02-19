@@ -282,27 +282,37 @@
 function cleanLatex(text) {
     if (!text) return '';
     return text
-        // Убираем блочные формулы \[ ... \] вместе с переносами
+        // Убираем блоки \[ ... \] вместе с переносами
         .replace(/\\\[(\s*\n?|\n?\s*)/g, '')
         .replace(/(\s*\n?|\n?\s*)\\\]/g, '')
         
-        // Убираем строчные формулы \( ... \)
+        // Убираем inline \( ... \)
         .replace(/\\\(\s*/g, '')
         .replace(/\s*\\\)/g, '')
         
-        // Заменяем LaTeX-команды на символы
+        // Убираем \, (пробелы в LaTeX)
+        .replace(/\\,/g, ' ')
+        
+        // Математические символы
         .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
         .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-        .replace(/\\sqrt/g, '√')
-        .replace(/\\times/g, '×')
-        .replace(/\\cdot/g, '×')
+        .replace(/\\sqrt(\s|$)/g, '√$1')
+        .replace(/\\times|\\cdot/g, '×')
         .replace(/\\div/g, '÷')
-        .replace(/\\[a-zA-Z]+(\{[^}]*\})?/g, '')  // остальные команды
+        .replace(/\\pi/g, 'π')
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\gamma/g, 'γ')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\geq/g, '≥')
         
-        // Степени
+        // Убираем остальные команды \команда{...}
+        .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
+        
+        // Степени: x^2 → x<sup>2</sup>
         .replace(/\^{?(\d+)}?/g, '<sup>$1</sup>')
         
-        // Убираем лишние пустые строки (3+ переноса → 2)
+        // Убираем лишние пустые строки
         .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
