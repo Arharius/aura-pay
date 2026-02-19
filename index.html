@@ -280,30 +280,41 @@
         });
 
         function cleanLatex(text) {
-            if (!text) return '';
-            return text
-                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-                .replace(/\\sqrt/g, '√')
-                .replace(/\\angle/g, '∠')
-                .replace(/\\degrees?/g, '°')
-                .replace(/\\cdot|\\times/g, '×')
-                .replace(/\\div/g, '÷')
-                .replace(/\\pi/g, 'π')
-                .replace(/\\alpha/g, 'α')
-                .replace(/\\beta/g, 'β')
-                .replace(/\\gamma/g, 'γ')
-                .replace(/\\leq/g, '≤')
-                .replace(/\\geq/g, '≥')
-                .replace(/\\neq/g, '≠')
-                .replace(/\\approx/g, '≈')
-                .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
-                .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
-                .replace(/\^\{?(\d+)\}?/g, '<sup>$1</sup>')
-                .replace(/\n/g, '<br>')
-                .trim();
-        }
-
+    if (!text) return '';
+    return text
+        // 1. Сначала убираем блоки \[ ... \] и \( ... \) полностью
+        .replace(/\\\[\s*/g, '')           // убираем \[
+        .replace(/\s*\\\]/g, '')           // убираем \]
+        .replace(/\\\(\s*/g, '')           // убираем \(
+        .replace(/\s*\\\)/g, '')           // убираем \)
+        
+        // 2. Заменяем LaTeX-команды на символы
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+        .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+        .replace(/\\sqrt/g, '√')
+        .replace(/\\angle/g, '∠')
+        .replace(/\\degree/g, '°')
+        .replace(/\\cdot|\\times/g, '×')
+        .replace(/\\div/g, '÷')
+        .replace(/\\pi/g, 'π')
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\gamma/g, 'γ')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\neq/g, '≠')
+        .replace(/\\approx/g, '≈')
+        .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
+        
+        // 3. Убираем оставшиеся неизвестные команды (начинающиеся с \)
+        .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
+        
+        // 4. Чистим степени и форматирование
+        .replace(/\^\{?(\d+)\}?/g, '<sup>$1</sup>')
+        .replace(/  +/g, ' ')              // убираем двойные пробелы
+        .replace(/\n/g, '<br>')
+        .trim();
+}
         window.onload = () => {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
