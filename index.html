@@ -282,30 +282,49 @@
             }));
         });
 
-        function cleanLatex(text) {
-            return text
-                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-                .replace(/\\sqrt/g, '√')
-                .replace(/\\angle/g, '∠')
-                .replace(/\\degrees?/g, '°')
-                .replace(/\\cdot|\\times/g, '×')
-                .replace(/\\div/g, '÷')
-                .replace(/\\pi/g, 'π')
-                .replace(/\\alpha/g, 'α')
-                .replace(/\\beta/g, 'β')
-                .replace(/\\gamma/g, 'γ')
-                .replace(/\\leq/g, '≤')
-                .replace(/\\geq/g, '≥')
-                .replace(/\\neq/g, '≠')
-                .replace(/\\approx/g, '≈')
-                .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
-                .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
-                .replace(/\^\{?(\d+)\}?/g, '<sup>$1</sup>')
-                .replace(/\n/g, '<br>')
-                .trim();
-        }
-
+     function cleanLatex(text) {
+    return text
+        // Убираем LaTeX-скобки \[ \] и \( \)
+        .replace(/\\[\[\]\(\)]/g, '')
+        
+        // Исправляем кривые дроби (BC/(C)) → BC/C или (12√6)/(√3) → 12√6/√3
+        .replace(/\(([a-zA-Z0-9√\s]+)\/\(([a-zA-Z0-9√\s]+)\)\)/g, '$1/$2')
+        .replace(/\(([a-zA-Z0-9√\s]+)\/([a-zA-Z0-9√\s]+)\)/g, '$1/$2')
+        
+        // Исправляем sin(B) → sin B, cos(C) → cos C (убираем скобки у функций)
+        .replace(/(sin|cos|tg|ctg)\(([A-Z0-9°]+)\)/g, '$1 $2')
+        
+        // Убираем пустые знаки равенства " = =" 
+        .replace(/\s*=\s*=\s*/g, ' = ')
+        
+        // Убираем обратные слеши вообще
+        .replace(/\\/g, '')
+        
+        // Исправляем многоточия "...." на "..."
+        .replace(/\.{4,}/g, '...')
+        
+        // Убираем лишние пробелы в конце строк
+        .replace(/\s+$/gm, '')
+        
+        // Стандартная замена LaTeX-команд (на всякий случай)
+        .replace(/frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+        .replace(/sqrt\{([^}]+)\}/g, '√$1')
+        .replace(/sqrt/g, '√')
+        .replace(/angle/g, '∠')
+        .replace(/degrees?/g, '°')
+        .replace(/cdot|times/g, '×')
+        .replace(/div/g, '÷')
+        .replace(/pi/g, 'π')
+        .replace(/alpha/g, 'α')
+        .replace(/beta/g, 'β')
+        .replace(/gamma/g, 'γ')
+        .replace(/boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
+        
+        // Двойные переносы строк → одинарные
+        .replace(/\n\n\n+/g, '\n\n')
+        
+        .trim();
+}
         window.onload = () => {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
