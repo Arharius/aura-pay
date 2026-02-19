@@ -8,14 +8,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
     <link rel="manifest" href="manifest.json">
-    
-    <!-- KaTeX для красивых формул -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    
     <title>Aura AI - Решение ЦДЗ</title>
-    <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
+    
+    <!-- УБРАН Tesseract.js -->
     
     <style>
         :root {
@@ -24,36 +19,13 @@
             --accent: #00d4ff;
             --accent2: #7000ff;
             --pro: #ffd700;
-            --max-width: 600px; /* Ограничение ширины */
+            --max-width: 600px;
         }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        html, body { overscroll-behavior-y: none; touch-action: pan-y; height: 100%; overflow: hidden; width: 100%; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); }
+        body { color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; }
         
-        html, body { 
-            overscroll-behavior-y: none; 
-            touch-action: pan-y; 
-            height: 100%; 
-            overflow: hidden; 
-            width: 100%;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%);
-        }
-        
-        body { 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center; /* Центрирование на десктопе */
-        }
-        
-        /* Ограничение ширины для десктопа */
-        .app-container {
-            width: 100%;
-            max-width: var(--max-width);
-            height: 100vh;
-            position: relative;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%);
-            box-shadow: 0 0 50px rgba(0,0,0,0.5); /* Тень для красоты на десктопе */
-        }
+        .app-container { width: 100%; max-width: var(--max-width); height: 100vh; position: relative; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         
         #splash { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .splash-logo { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -75,31 +47,14 @@
         .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 180px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         .chat-container { display: flex; flex-direction: column; gap: 12px; }
         
-        .message { max-width: 90%; padding: 14px 18px; border-radius: 18px; font-size: 15px; line-height: 1.5; animation: messageIn 0.3s ease-out; word-wrap: break-word; }
+        .message { max-width: 90%; padding: 14px 18px; border-radius: 18px; font-size: 15px; line-height: 1.6; animation: messageIn 0.3s ease-out; word-wrap: break-word; }
         @keyframes messageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .message.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); align-self: flex-end; border-bottom-right-radius: 4px; }
         .message.ai { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.1); align-self: flex-start; border-bottom-left-radius: 4px; }
-        .message img { max-width: 100%; border-radius: 8px; margin: 8px 0; max-height: 300px; object-fit: contain; }
+        .message img { max-width: 100%; border-radius: 8px; margin: 8px 0; max-height: 300px; object-fit: contain; display: block; }
         
-        /* Стили для формул */
-        .message.ai .katex { font-size: 1.1em; }
-        .message.ai code { 
-            background: rgba(0,0,0,0.3); 
-            padding: 2px 6px; 
-            border-radius: 4px; 
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-        .message.ai pre {
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 8px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            border-left: 3px solid var(--accent);
-        }
+        .message.ai strong { color: var(--accent); }
+        .message.ai .answer-box { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--pro); padding: 10px; border-radius: 8px; margin-top: 10px; display: inline-block; color: var(--pro); font-weight: bold; }
         
         .input-container { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10, 14, 39, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 16px 24px 16px; z-index: 100; }
         .input-actions { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
@@ -145,11 +100,12 @@
         .content, .chat-container { user-select: none; -webkit-user-select: none; }
         .message { user-select: text; -webkit-user-select: text; }
         
-        /* Адаптив для десктопа */
         @media (min-width: 601px) {
             body { background: #050817; }
             .app-container { border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
         }
+        
+        #disclaimer-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2500; flex-direction:column; padding:24px; overflow-y:auto; }
     </style>
 </head>
 <body>
@@ -164,7 +120,7 @@
 
         <div id="splash">
             <div class="splash-logo">AURA AI</div>
-            <div style="color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 10px;">Решение ЦДЗ и ГДЗ</div>
+            <div style="color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 10px;">Решение ЦДЗ и ГДЗ по фото</div>
             <div class="loader">
                 <div class="loader-bar" id="loader-bar"></div>
             </div>
@@ -220,7 +176,7 @@
                         Бесплатно: 20 решений в день<br>
                         PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
                         1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
-                        2. Или напишите текст вручную<br>
+                        2. AI решит её за 10 секунд<br>
                         3. Получите пошаговое решение
                     </div>
                 </div>
@@ -237,11 +193,11 @@
                     <button class="action-btn clear" onclick="clearChat()">🗑️ Очистить</button>
                 </div>
                 <div class="input-wrapper">
-                    <textarea class="message-input" id="msg-input" placeholder="Введите задачу..." rows="1"></textarea>
+                    <textarea class="message-input" id="msg-input" placeholder="Или введите задачу текстом..." rows="1"></textarea>
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
             </div>
-            <input type="file" id="file-input" accept="image/*,.pdf,.txt" onchange="handleFile(event)">
+            <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)">
         </div>
         <div class="toast" id="toast"></div>
     </div>
@@ -274,7 +230,7 @@
             SUPABASE_KEY: SUPABASE_KEY,
             DAILY_LIMIT: 20,
             MODES: {
-                tutor: { name: 'Репетитор', free: true, system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй каждый шаг простым языком. Для математики: показывай формулы.' },
+                tutor: { name: 'Репетитор', free: true, system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй простым языком. Используй только эти символы для формул: √, °, ∠, ², ³, ×, ÷. Никакого LaTeX (без \\frac, \\sqrt). Ответ выдели словом "Ответ:".' },
                 lawyer: { name: 'Юрист', free: false, system: 'Ты старший юрист с 15-летним стажем в РФ. Давай ДЕТАЛЬНЫЕ консультации с конкретными статьями ГК РФ, НК РФ, ТК РФ. Давай сроки и стратегии.' },
                 psych: { name: 'Психолог', free: false, system: 'Ты клинический психолог, специалист по КПТ. Проводи терапию: давай домашние задания, дневники мыслей, техники самопомощи. Глубинная работа.' }
             }
@@ -301,11 +257,7 @@
         function updateOnlineStatus() {
             const offlineScreen = document.getElementById('offline-screen');
             const isOnline = navigator.onLine;
-            if (!isOnline) {
-                offlineScreen.style.display = 'flex';
-            } else {
-                offlineScreen.style.display = 'none';
-            }
+            offlineScreen.style.display = isOnline ? 'none' : 'flex';
         }
 
         function checkConnection() {
@@ -330,19 +282,28 @@
             }));
         });
 
-        // Инициализация KaTeX для рендеринга формул
-        function renderMath() {
-            if (typeof renderMathInElement !== 'undefined') {
-                renderMathInElement(document.getElementById('messages'), {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '\\[', right: '\\]', display: true},
-                        {left: '\\(', right: '\\)', display: false},
-                        {left: '$', right: '$', display: false}
-                    ],
-                    throwOnError: false
-                });
-            }
+        function cleanLatex(text) {
+            return text
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+                .replace(/\\sqrt/g, '√')
+                .replace(/\\angle/g, '∠')
+                .replace(/\\degrees?/g, '°')
+                .replace(/\\cdot|\\times/g, '×')
+                .replace(/\\div/g, '÷')
+                .replace(/\\pi/g, 'π')
+                .replace(/\\alpha/g, 'α')
+                .replace(/\\beta/g, 'β')
+                .replace(/\\gamma/g, 'γ')
+                .replace(/\\leq/g, '≤')
+                .replace(/\\geq/g, '≥')
+                .replace(/\\neq/g, '≠')
+                .replace(/\\approx/g, '≈')
+                .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
+                .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
+                .replace(/\^\{?(\d+)\}?/g, '<sup>$1</sup>')
+                .replace(/\n/g, '<br>')
+                .trim();
         }
 
         window.onload = () => {
@@ -356,7 +317,6 @@
                 const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
                 if (hoursDiff < 24 && chatData.html) {
                     document.getElementById('messages').innerHTML = chatData.html;
-                    renderMath(); // Рендерим формулы в сохраненном чате
                 }
             }
 
@@ -403,7 +363,8 @@
             document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
         }
 
-        async function sendMessage(imageData = null) {
+        // ОТПРАВКА ТЕКСТОМ (через старый solve-task)
+        async function sendMessage() {
             if (!navigator.onLine) {
                 showToast('Нет интернета');
                 document.getElementById('offline-screen').style.display = 'flex';
@@ -412,7 +373,7 @@
 
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
-            if (!text && !imageData) return;
+            if (!text) return;
 
             if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
                 showToast('Лимит 20 решений/день');
@@ -422,7 +383,7 @@
 
             if (navigator.vibrate) navigator.vibrate(50);
 
-            addMessage(imageData ? '[Фото] ' + text : text, 'user', imageData);
+            addMessage(text, 'user');
             input.value = '';
             input.style.height = 'auto';
 
@@ -438,7 +399,7 @@
                     },
                     body: JSON.stringify({
                         mode: currentMode,
-                        message: text || 'Реши задачу на фото',
+                        message: text,
                         system: CONFIG.MODES[currentMode].system,
                         user_pro: isPro
                     })
@@ -450,18 +411,8 @@
                 document.getElementById('typing').classList.remove('active');
 
                 if (data.error) throw new Error(data.error);
-                if (!data.answer) throw new Error('Пустой ответ');
-
-                // Форматируем ответ (заменяем markdown на HTML)
-                let formattedAnswer = data.answer
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n\n/g, '</p><p>')
-                    .replace(/\n/g, '<br>');
                 
-                addMessage(formattedAnswer, 'ai');
-                
-                // Рендерим формулы после добавления сообщения
-                setTimeout(renderMath, 100);
+                addMessage(cleanLatex(data.answer), 'ai');
 
                 if (!isPro) {
                     messageCount++;
@@ -476,9 +427,73 @@
             }
         }
 
+        // ОТПРАВКА ФОТО (через новый solve-vision)
+        async function takePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            closeCamera();
+            
+            if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            // Показываем фото в чате
+            addMessage('[📷 Фото задачи]', 'user', imageData);
+            
+            showToast('🔍 Анализирую фото...');
+            document.getElementById('typing').classList.add('active');
+
+            try {
+                // Отправляем в Supabase Edge Function (OpenRouter)
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        imageBase64: imageData,
+                        mode: currentMode,
+                        user_pro: isPro
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка сервера');
+                }
+
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
+
+                if (data.error) throw new Error(data.error);
+                
+                addMessage(cleanLatex(data.answer), 'ai');
+
+                if (!isPro) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
+                }
+
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                console.error(error);
+                addMessage('❌ Не удалось распознать фото. Попробуйте написать текстом: ' + error.message, 'ai');
+            }
+        }
+
         async function openCamera() {
             if (currentMode !== 'tutor' && !isPro) {
-                showToast('Камера в PRO');
+                showToast('Камера доступна в режиме Репетитора или PRO');
                 showPaywall();
                 return;
             }
@@ -492,23 +507,6 @@
             }
         }
 
-        function takePhoto() {
-            const video = document.getElementById('camera-video');
-            const canvas = document.getElementById('camera-canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            closeCamera();
-
-            showToast('Распознаю текст...');
-            Tesseract.recognize(imageData, 'rus+eng').then(({ data: { text } }) => {
-                document.getElementById('msg-input').value = text;
-                showToast('Проверьте текст');
-            });
-        }
-
         function closeCamera() {
             document.getElementById('camera-modal').classList.remove('active');
             if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
@@ -517,17 +515,62 @@
         function handleFile(event) {
             const file = event.target.files[0];
             if (!file) return;
-            if (file.size > 10 * 1024 * 1024) { showToast('Файл слишком большой'); return; }
+            if (file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой (макс 5MB)'); return; }
+            
             const reader = new FileReader();
             reader.onload = (e) => {
+                // Для файлов используем тот же механизм, что и для камеры
                 if (file.type.startsWith('image/')) {
-                    Tesseract.recognize(e.target.result, 'rus+eng').then(({ data: { text } }) => {
-                        document.getElementById('msg-input').value = text;
-                        showToast('Текст распознан');
-                    });
+                    processImage(e.target.result);
                 }
             };
             reader.readAsDataURL(file);
+        }
+
+        async function processImage(imageData) {
+            if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            addMessage('[📷 Фото из галереи]', 'user', imageData);
+            
+            showToast('🔍 Анализирую...');
+            document.getElementById('typing').classList.add('active');
+
+            try {
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        imageBase64: imageData,
+                        mode: currentMode,
+                        user_pro: isPro
+                    })
+                });
+
+                if (!response.ok) throw new Error('Ошибка сервера');
+
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
+                
+                if (data.error) throw new Error(data.error);
+                
+                addMessage(cleanLatex(data.answer), 'ai');
+
+                if (!isPro) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
+                }
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                addMessage('❌ Ошибка: ' + error.message, 'ai');
+            }
         }
 
         async function initPayment() {
@@ -562,9 +605,9 @@
             div.className = `message ${type}`;
             
             if (image && type === 'user') {
-                div.innerHTML = `<img src="${image}" style="max-width:100%;margin-bottom:8px;border-radius:8px;"><br>${content}`;
+                div.innerHTML = `<img src="${image}" alt="Фото задачи">${content}`;
             } else {
-                div.innerHTML = `<p>${content}</p>`;
+                div.innerHTML = content;
             }
             
             document.getElementById('messages').appendChild(div);
@@ -579,10 +622,16 @@
 
         function showPaywall() { document.getElementById('paywall').classList.add('active'); }
         function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
-        function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+        
+        function showToast(msg) { 
+            const t = document.getElementById('toast'); 
+            t.textContent = msg; 
+            t.classList.add('show'); 
+            setTimeout(() => t.classList.remove('show'), 3000); 
+        }
 
         function clearChat() {
-            if(confirm('Удалить всю историю чата? Это действие нельзя отменить.')) {
+            if(confirm('Удалить всю историю чата? Счетчик сбросится на 20/20.')) {
                 localStorage.removeItem('aura_chat_backup');
                 localStorage.removeItem(`usage_${new Date().toDateString()}`);
                 
@@ -592,7 +641,7 @@
                         Бесплатно: 20 решений в день<br>
                         PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
                         1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
-                        2. Или напишите текст вручную<br>
+                        2. AI решит её за 10 секунд<br>
                         3. Получите пошаговое решение
                     </div>
                 `;
