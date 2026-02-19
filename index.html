@@ -35,7 +35,8 @@
         
         header { padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .logo { font-weight: 900; font-size: 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .credits { font-size: 12px; color: var(--accent); background: rgba(0, 212, 255, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 212, 255, 0.3); }
+        .credits { font-size: 12px; color: var(--accent); background: rgba(0, 212, 255, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 212, 255, 0.3); cursor: pointer; transition: all 0.2s; }
+        .credits:active { transform: scale(0.95); }
         
         .mode-tabs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; }
         .mode-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
@@ -156,7 +157,7 @@
             <header>
                 <div class="logo">AURA AI</div>
                 <div style="display:flex;gap:10px;align-items:center;">
-                    <div class="credits" id="credits-display">20/20</div>
+                    <div class="credits" id="credits-display" onclick="toggleAdmin()">20/20</div>
                     <button onclick="clearChat()" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Очистить</button>
                 </div>
             </header>
@@ -232,7 +233,7 @@
             }
         };
 
-        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (исправлено - isAdmin вынесен сюда)
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
         let currentMode = 'tutor';
         let messageCount = 0;
         let stream = null;
@@ -286,6 +287,7 @@
         });
 
         function cleanLatex(text) {
+            if (!text) return '';
             return text
                 .replace(/\\[\[\]\(\)]/g, '')
                 .replace(/\(([a-zA-Z0-9√\s]+)\/\(([a-zA-Z0-9√\s]+)\)\)/g, '$1/$2')
@@ -318,10 +320,14 @@
 
             const savedChat = localStorage.getItem('aura_chat_backup');
             if (savedChat) {
-                const chatData = JSON.parse(savedChat);
-                const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
-                if (hoursDiff < 24 && chatData.html) {
-                    document.getElementById('messages').innerHTML = chatData.html;
+                try {
+                    const chatData = JSON.parse(savedChat);
+                    const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
+                    if (hoursDiff < 24 && chatData.html) {
+                        document.getElementById('messages').innerHTML = chatData.html;
+                    }
+                } catch (e) {
+                    console.error('Error loading chat:', e);
                 }
             }
 
@@ -368,7 +374,18 @@
             document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
         }
 
-        // ОТПРАВКА ТЕКСТОМ (исправлена синтаксическая ошибка с лишней скобкой)
+        // ВЫХОД ИЗ АДМИНА (клик на бейдж ADMIN)
+        function toggleAdmin() {
+            if (isAdmin) {
+                localStorage.removeItem('aura_admin');
+                isAdmin = false;
+                showToast('🔒 ADMIN выключен');
+                updateCredits();
+            } else {
+                showToast('ADMIN можно включить только через консоль');
+            }
+        }
+
         async function sendMessage() {
             if (!navigator.onLine) {
                 showToast('Нет интернета');
@@ -406,11 +423,14 @@
                         mode: currentMode,
                         message: text,
                         system: CONFIG.MODES[currentMode].system,
-                        user_pro: isPro
+                        user_pro: isPro || isAdmin
                     })
                 });
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(errorData || `HTTP ${response.status}`);
+                }
 
                 const data = await response.json();
                 document.getElementById('typing').classList.remove('active');
@@ -419,7 +439,6 @@
                 
                 addMessage(cleanLatex(data.answer), 'ai');
 
-                // ИСПРАВЛЕНО: убрана лишняя закрывающая скобка }
                 if (!isPro && !isAdmin) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
@@ -427,13 +446,19 @@
                 }
             } catch (error) {
                 document.getElementById('typing').classList.remove('active');
-                addMessage('❌ Ошибка: ' + error.message, 'ai');
+                // ИСПРАВЛЕНИЕ: правильная обработка ошибки
+                let errorMsg = 'Ошибка сети';
+                if (typeof error === 'string') errorMsg = error;
+                else if (error?.message) errorMsg = error.message;
+                else if (error?.error) errorMsg = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+                else try { errorMsg = JSON.stringify(error); } catch(e) {}
+                
+                addMessage('❌ Ошибка: ' + errorMsg, 'ai');
             } finally {
                 document.getElementById('send-btn').disabled = false;
             }
         }
 
-        // ОТПРАВКА ФОТО СО STREAMING (вернул оригинальную логику)
         async function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
@@ -465,9 +490,11 @@
                     body: JSON.stringify({ imageBase64: imageData, mode: currentMode })
                 });
 
-                if (!response.ok) throw new Error('Ошибка сети');
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || `HTTP ${response.status}`);
+                }
 
-                // Создаем сообщение для потокового вывода (как в оригинале)
                 const msgDiv = document.createElement('div');
                 msgDiv.className = 'message ai';
                 msgDiv.innerHTML = '<em>Набираю ответ...</em>';
@@ -476,7 +503,6 @@
                 
                 document.getElementById('typing').classList.remove('active');
 
-                // Читаем поток (как в оригинале)
                 const reader = response.body.getReader();
                 let fullText = '';
                 
@@ -514,7 +540,14 @@
 
             } catch (error) {
                 document.getElementById('typing').classList.remove('active');
-                addMessage('❌ Ошибка: ' + error.message, 'ai');
+                // ИСПРАВЛЕНИЕ: правильная обработка ошибки
+                let errorMsg = 'Ошибка обработки фото';
+                if (typeof error === 'string') errorMsg = error;
+                else if (error?.message) errorMsg = error.message;
+                else if (error?.error) errorMsg = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+                else try { errorMsg = JSON.stringify(error); } catch(e) {}
+                
+                addMessage('❌ Ошибка: ' + errorMsg, 'ai');
             }
         }
 
@@ -595,25 +628,16 @@
                 });
 
                 if (!response.ok) {
-                    let errorText = `Ошибка сервера: ${response.status}`;
-                    try {
-                        const errData = await response.json();
-                        errorText = errData.error || errData.message || errorText;
-                    } catch(e) {}
-                    throw new Error(errorText);
+                    const text = await response.text();
+                    throw new Error(text || `HTTP ${response.status}`);
                 }
                 
                 const data = await response.json();
                 document.getElementById('typing').classList.remove('active');
                 document.getElementById('send-btn').disabled = false;
                 
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                if (!data.answer) {
-                    throw new Error('Пустой ответ от сервера');
-                }
+                if (data.error) throw new Error(data.error);
+                if (!data.answer) throw new Error('Пустой ответ от сервера');
                 
                 const cleanAnswer = cleanLatex(data.answer);
                 addMessage(cleanAnswer, 'ai');
@@ -628,24 +652,15 @@
                 document.getElementById('typing').classList.remove('active');
                 document.getElementById('send-btn').disabled = false;
                 
-                let errorMessage = 'Неизвестная ошибка';
-                if (typeof error === 'string') {
-                    errorMessage = error;
-                } else if (error && error.message) {
-                    errorMessage = error.message;
-                } else if (error && error.error) {
-                    errorMessage = error.error;
-                } else {
-                    try {
-                        errorMessage = JSON.stringify(error);
-                    } catch(e) {
-                        errorMessage = 'Ошибка сети';
-                    }
-                }
+                // ИСПРАВЛЕНИЕ: правильная обработка ошибки
+                let errorMsg = 'Не удалось решить';
+                if (typeof error === 'string') errorMsg = error;
+                else if (error?.message) errorMsg = error.message;
+                else if (error?.error) errorMsg = typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+                else try { errorMsg = JSON.stringify(error); } catch(e) {}
                 
-                console.error('ProcessImage error:', error);
-                addMessage('❌ Ошибка: ' + errorMessage, 'ai');
-                showToast('❌ Не удалось решить');
+                addMessage('❌ Ошибка: ' + errorMsg, 'ai');
+                showToast('❌ Ошибка загрузки');
             }
         }
 
@@ -672,7 +687,7 @@
                 if (data.confirmation_url) window.location.href = data.confirmation_url;
 
             } catch (err) {
-                showToast('Ошибка оплаты: ' + err.message);
+                showToast('Ошибка оплаты: ' + (err?.message || err));
             }
         }
 
@@ -690,11 +705,9 @@
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
-        // ЕДИНСТВЕННАЯ ФУНКЦИЯ updateCredits (исправлено дублирование)
         function updateCredits() {
             const el = document.getElementById('credits-display');
             
-            // Режим админа (безлимитно)
             if (isAdmin) {
                 el.textContent = 'ADMIN';
                 el.style.color = '#ffd700';
@@ -703,7 +716,6 @@
                 return;
             }
             
-            // PRO пользователь (безлимитно)
             if (isPro) {
                 el.textContent = '∞/∞';
                 el.style.color = 'var(--accent)';
@@ -712,7 +724,6 @@
                 return;
             }
             
-            // Обычный пользователь (счетчик 20)
             const remaining = CONFIG.DAILY_LIMIT - messageCount;
             el.textContent = `${remaining}/${CONFIG.DAILY_LIMIT}`;
             
@@ -764,7 +775,6 @@
             }
         }
 
-        // Проверка успешной оплаты
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('payment') === 'success') {
             const expiryDate = new Date();
