@@ -16,7 +16,7 @@
         :root { --bg: #0a0e27; --card: rgba(255,255,255,0.05); --accent: #00d4ff; --accent2: #7000ff; --pro: #ffd700; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
-        /* ОТКЛЮЧАЕМ PULL-TO-REFRESH */
+        /* БЛОКИРОВКА PULL-TO-REFRESH */
         html, body {
             overscroll-behavior-y: none;
             touch-action: pan-y;
@@ -243,12 +243,52 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// Предотвращаем случайное обновление страницы
-document.addEventListener('touchmove', function(e) {
-    if (e.target.closest('.content')) {
+// ===== ЖЕСТКАЯ БЛОКИРОВКА PULL-TO-REFRESH (Версия 1.4) =====
+(function() {
+    'use strict';
+    
+    let startY = 0;
+    let isScrolling = false;
+    
+    // Блокируем стандартное поведение pull-to-refresh
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+        isScrolling = false;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', function(e) {
+        if (e.touches.length !== 1) return;
+        
+        const y = e.touches[0].clientY;
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        const diff = y - startY;
+        
+        // Если в начале страницы и тянут вниз (pull down) - блокируем
+        if (scrollTop <= 0 && diff > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        
+        // Если в конце страницы и тянут вверх (pull up) - тоже блокируем
+        const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight || window.innerHeight;
+        if (scrollTop + clientHeight >= scrollHeight && diff < 0) {
+            // Это не дает "отскакивать" вверх
+        }
+    }, { passive: false });
+    
+    // Запрещаем жест "pull down to refresh" на уровне документа
+    document.body.style.overscrollBehavior = 'none';
+    document.body.style.touchAction = 'pan-y';
+    document.documentElement.style.overscrollBehavior = 'none';
+    
+    // Дополнительная защита от iOS rubber-band effect
+    document.addEventListener('gesturestart', function(e) {
         e.preventDefault();
-    }
-}, { passive: false });
+    });
+})();
 
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
@@ -331,7 +371,7 @@ window.onload = () => {
             .catch(err => console.log('SW error:', err));
     }
     
-    // ВОССТАНОВЛЕНИЕ ЧАТА ПРИ ЗАГРУЗКЕ
+    // ВОССТАНОВЛЕНИЕ ЧАТА
     try {
         const savedChat = localStorage.getItem('aura_chat_backup');
         if (savedChat) {
@@ -340,10 +380,8 @@ window.onload = () => {
             const now = new Date();
             const hoursDiff = (now - savedTime) / (1000 * 60 * 60);
             
-            // Восстанавливаем только если прошло меньше 24 часов
             if (hoursDiff < 24 && chatData.html) {
                 document.getElementById('messages').innerHTML = chatData.html;
-                // Удаляем приветственное сообщение если есть сохраненный чат
                 const welcome = document.getElementById('welcome-message');
                 if (welcome && chatData.html.includes('message ai')) {
                     welcome.style.display = 'none';
@@ -411,7 +449,6 @@ function setMode(mode) {
     document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
     
-    // Сохраняем при смене режима
     const messages = document.getElementById('messages').innerHTML;
     localStorage.setItem('aura_chat_backup', JSON.stringify({
         html: messages,
@@ -438,7 +475,6 @@ async function sendMessage(imageData = null) {
         return;
     }
     
-    // Вибрация при отправке (нативное ощущение)
     if (navigator.vibrate) navigator.vibrate(50);
     
     addMessage(imageData ? '[Фото] ' + text : text, 'user', imageData);
@@ -476,7 +512,6 @@ async function sendMessage(imageData = null) {
         
         addMessage(data.answer, 'ai');
         
-        // Сохраняем чат после получения ответа
         const messages = document.getElementById('messages').innerHTML;
         localStorage.setItem('aura_chat_backup', JSON.stringify({
             html: messages,
@@ -602,7 +637,6 @@ function addMessage(content, type, image = null) {
     div.innerHTML = image && type === 'user' ? `<img src="${image}" style="max-width:100%;margin-bottom:8px;border-radius:8px;"><br>${content}` : content;
     document.getElementById('messages').appendChild(div);
     
-    // Плавная прокрутка вниз
     const container = document.getElementById('chat-container');
     container.scrollTo({
         top: container.scrollHeight,
