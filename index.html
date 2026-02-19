@@ -1,538 +1,1092 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI — Решение задач по фото</title>
-    <meta name="description" content="ИИ-помощник для решения задач по фото, юридических и психологических консультаций">
-    <meta name="theme-color" content="#6366f1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0e27">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
+  <link rel="manifest" href="manifest.json">
+  <title>Aura AI - Решение ЦДЗ</title>
+  <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
+  <style>
+    :root {
+      --bg: #0a0e27;
+      --card: rgba(255, 255, 255, 0.05);
+      --accent: #00d4ff;
+      --accent2: #7000ff;
+      --pro: #ffd700;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      overscroll-behavior-y: none;
+      touch-action: pan-y;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-logo {
+      font-size: 48px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .loader {
+      width: 200px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+
+    .loader-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.3s;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      opacity: 0;
+      transition: opacity 0.3s;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .app.visible {
+      opacity: 1;
+    }
+
+    header {
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-weight: 900;
+      font-size: 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .credits {
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(0, 212, 255, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .mode-tab {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mode-tab.active {
+      background: rgba(0, 212, 255, 0.2);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .mode-tab.pro {
+      opacity: 0.6;
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: 180px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 90%;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.5;
+      animation: messageIn 0.3s ease-out;
+    }
+
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.ai {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 8px 0;
+      max-height: 300px;
+      object-fit: contain;
+    }
+
+    .input-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 14, 39, 0.98);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 16px 24px 16px;
+      z-index: 100;
+    }
+
+    .input-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 24px;
+      padding: 8px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .message-input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 15px;
+      padding: 8px 0;
+      max-height: 120px;
+      resize: none;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .message-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.3;
+      background: #666;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .camera-preview {
+      flex: 1;
+      background: #000;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-preview video, .camera-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .camera-controls {
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    .camera-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: white;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .paywall {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.98);
+      z-index: 2000;
+      display: none;
+      flex-direction: column;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .paywall.active {
+      display: flex;
+    }
+
+    .paywall-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: var(--pro);
+      text-align: center;
+    }
+
+    .pricing-card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 16px;
+      border-color: var(--pro);
+      background: rgba(255, 215, 0, 0.05);
+    }
+
+    .price {
+      font-size: 32px;
+      font-weight: 900;
+      margin: 12px 0;
+    }
+
+    .price-features {
+      list-style: none;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 16px 0;
+    }
+
+    .price-features li {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .buy-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--pro), #ffed4e);
+      color: #000;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background: var(--card);
+      padding: 12px 18px;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .typing-indicator.active {
+      display: flex;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing-dots span {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      z-index: 3000;
+      transition: transform 0.3s;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    #offline-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9998;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .content, .chat-container {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .message {
+      user-select: text;
+      -webkit-user-select: text;
+    }
     
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #ec4899;
-            --bg: #0f172a;
-            --surface: rgba(30, 41, 59, 0.8);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: rgba(148, 163, 184, 0.2);
-            --success: #10b981;
-            --error: #ef4444;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .bg-gradient {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
-            animation: pulse 10s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        nav {
-            position: fixed;
-            top: 0; width: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
-            padding: 1rem;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-        
-        .nav-links::-webkit-scrollbar { display: none; }
-
-        .nav-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            border-radius: 2rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            font-weight: 500;
-        }
-
-        .nav-btn:hover, .nav-btn.active {
-            background: var(--surface);
-            color: var(--text);
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 6rem 1rem 2rem;
-        }
-
-        .section {
-            display: none;
-            animation: fadeIn 0.5s;
-        }
-
-        .section.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .card {
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-        }
-
-        h1 { font-size: 2rem; margin-bottom: 1rem; line-height: 1.2; }
-        p { color: var(--text-muted); margin-bottom: 1.5rem; }
-
-        .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: 1rem;
-            padding: 3rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(99, 102, 241, 0.05);
-            position: relative;
-        }
-
-        .upload-zone:hover, .upload-zone.dragover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .upload-zone input { display: none; }
-        
-        .upload-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.7; }
-        
-        .preview-image {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 0.5rem;
-            margin-top: 1rem;
-            display: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 2rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .loading.active { display: block; }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .result-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-top: 1rem;
-            display: none;
-            white-space: pre-wrap;
-            line-height: 1.8;
-            font-size: 0.95rem;
-        }
-
-        .result-box.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-        }
-
-        .chat-container {
-            height: 60vh;
-            display: flex;
-            flex-direction: column;
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .message {
-            max-width: 80%;
-            padding: 1rem;
-            border-radius: 1rem;
-            animation: slideIn 0.3s;
-            word-wrap: break-word;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .message.user {
-            align-self: flex-end;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border-bottom-right-radius: 0.25rem;
-        }
-
-        .message.assistant {
-            align-self: flex-start;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-bottom-left-radius: 0.25rem;
-        }
-
-        .chat-input-area {
-            padding: 1rem;
-            background: rgba(30, 41, 59, 0.5);
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .chat-input {
-            flex: 1;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 0.75rem 1rem;
-            border-radius: 2rem;
-            outline: none;
-        }
-
-        .chat-input:focus { border-color: var(--primary); }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--primary);
-            border-radius: 2rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        @media (max-width: 640px) {
-            h1 { font-size: 1.5rem; }
-            .card { padding: 1.5rem; }
-            .nav-btn { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
-        }
-    </style>
+    /* Дисклеймер модал */
+    #disclaimer-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 2500;
+      flex-direction: column;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    
+    .disclaimer-content {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    /* Кнопки действий с фото */
+    .photo-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .photo-action-btn {
+      background: rgba(0, 212, 255, 0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .photo-action-btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+    }
+  </style>
+  <base target="_blank">
 </head>
+
 <body>
 
-<div class="bg-gradient"></div>
+  <div id="offline-screen">
+    <div style="font-size: 64px; margin-bottom: 20px;">📡</div>
+    <h2 style="margin-bottom: 12px; color: white;">Нет подключения</h2>
+    <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px; max-width: 300px;">Для работы Aura AI требуется интернет</p>
+    <button onclick="checkConnection()" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 24px; font-weight: bold; font-size: 16px; cursor: pointer;">Повторить</button>
+  </div>
 
-<nav>
-    <div class="nav-container">
-        <div class="logo">⚡ Aura AI</div>
-        <div class="nav-links">
-            <button class="nav-btn active" onclick="showSection('solver')">📸 Решение</button>
-            <button class="nav-btn" onclick="showSection('lawyer')">⚖️ Юрист</button>
-            <button class="nav-btn" onclick="showSection('psych')">🧠 Психолог</button>
-        </div>
+  <div id="splash">
+    <div class="splash-logo">AURA AI</div>
+    <div style="color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 10px;">Решение ЦДЗ и ГДЗ</div>
+    <div class="loader">
+      <div class="loader-bar" id="loader-bar"></div>
     </div>
-</nav>
+  </div>
 
-<div class="container">
+  <div class="modal" id="camera-modal">
+    <button class="close-modal" onclick="closeCamera()">✕</button>
+    <div class="camera-preview">
+      <video id="camera-video" autoplay playsinline></video>
+      <canvas id="camera-canvas" style="display:none;"></canvas>
+    </div>
+    <div class="camera-controls">
+      <button class="camera-btn" onclick="takePhoto()"></button>
+    </div>
+  </div>
 
-    <!-- SOLVER -->
-    <section id="solver" class="section active">
-        <div class="card">
-            <span class="badge">Режим: Решение задач по фото</span>
-            <h1>Загрузи фото задачи</h1>
-            <p>AI решит математику, физику, химию с пояснениями. 20 бесплатных решений, потом подписка.</p>
-            
-            <div class="upload-zone" onclick="document.getElementById('fileInput').click()" 
-                 ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
-                <div class="upload-icon">📷</div>
-                <div>Нажми или перетащи фото сюда</div>
-                <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">JPG, PNG, WEBP до 5MB</small>
-                <img id="preview" class="preview-image">
-            </div>
+  <div class="paywall" id="paywall">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div class="paywall-title">👑 PRO Версия</div>
+      <div style="color: rgba(255,255,255,0.6);">Разблокируйте все возможности</div>
+    </div>
+    <div class="pricing-card">
+      <div style="font-size: 18px; font-weight: 700; color: var(--pro);">PRO Доступ</div>
+      <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">30 дней</span></div>
+      <ul class="price-features">
+        <li>✅ Безлимитное решение задач</li>
+        <li>✅ Юрист (сложные консультации)</li>
+        <li>✅ Психолог (глубокая терапия)</li>
+        <li>✅ Распознавание рукописи</li>
+      </ul>
+      <button class="buy-btn" onclick="initPayment()">Купить PRO</button>
+    </div>
+    <button onclick="closePaywall()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 12px; width: 100%;">Продолжить бесплатно (20/день)</button>
+  </div>
 
-            <textarea id="promptInput" placeholder="Дополнительно: Реши методом подстановки..." 
-                      style="width: 100%; background: rgba(15,23,42,0.5); border: 1px solid var(--border); color: var(--text); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; resize: vertical; min-height: 80px;"></textarea>
-
-            <button class="btn" onclick="solveTask()" id="solveBtn">
-                <span>🚀</span> Решить задачу
-            </button>
-
-            <div class="loading" id="solverLoading">
-                <div class="spinner"></div>
-                <div>DeepSeek анализирует...</div>
-                <small style="color: var(--text-muted);">10-20 секунд</small>
-            </div>
-
-            <div id="solverResult" class="result-box"></div>
+  <div class="app" id="app">
+    <header>
+      <div class="logo">AURA AI</div>
+      <div class="credits" id="credits-display">20/20</div>
+    </header>
+    <div class="mode-tabs">
+      <div class="mode-tab active" onclick="handleModeClick('tutor')" data-mode="tutor">📚 Решение задач</div>
+      <div class="mode-tab pro" onclick="handleModeClick('lawyer')" data-mode="lawyer">⚖️ Юрист</div>
+      <div class="mode-tab pro" onclick="handleModeClick('psych')" data-mode="psych">🧠 Психолог</div>
+    </div>
+    <div class="content" id="chat-container">
+      <div class="chat-container" id="messages">
+        <div class="message ai" id="welcome-message">
+          <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+          Бесплатно: 20 решений в день<br>
+          PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
+          1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+          2. Или <b>Файл</b> — выберите фото из галереи<br>
+          3. AI решит задачу по фото автоматически!
         </div>
-    </section>
+      </div>
+      <div class="typing-indicator" id="typing">
+        <span>Решаю...</span>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div class="input-container">
+      <div class="input-actions">
+        <button class="action-btn" onclick="openCamera()">📷 Камера</button>
+        <button class="action-btn" onclick="document.getElementById('file-input').click()">📎 Файл</button>
+        <button class="action-btn" onclick="showPaywall()">⭐ PRO</button>
+      </div>
+      <div class="input-wrapper">
+        <textarea class="message-input" id="msg-input" placeholder="Введите задачу..." rows="1"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)">
+  </div>
+  
+  <div class="toast" id="toast"></div>
 
-    <!-- LAWYER -->
-    <section id="lawyer" class="section">
-        <div class="card">
-            <span class="badge">Режим: Юрист</span>
-            <h1>Юридическая помощь</h1>
-            <p>Консультации по законодательству РФ</p>
-        </div>
-        <div class="chat-container">
-            <div class="chat-messages" id="lawyerChat">
-                <div class="message assistant">⚖️ Здравствуйте! Опишите вашу ситуацию.</div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" class="chat-input" id="lawyerInput" placeholder="Ваш вопрос..." onkeypress="if(event.key==='Enter')sendToLawyer()">
-                <button class="btn" style="width: auto; margin: 0;" onclick="sendToLawyer()">➤</button>
-            </div>
-        </div>
-    </section>
+  <!-- ДИСКЛЕЙМЕР ДЛЯ PRO РЕЖИМОВ -->
+  <div id="disclaimer-modal">
+    <div class="disclaimer-content">
+      <h2 style="color:#ffd700;margin-bottom:16px;text-align:center;">⚠️ Важная информация</h2>
+      <div id="disclaimer-text" style="font-size:15px;line-height:1.6;color:rgba(255,255,255,0.9);"></div>
+    </div>
+    <button onclick="acceptDisclaimer()" style="background:linear-gradient(135deg,#ffd700,#ffed4e);color:#000;border:none;padding:16px;border-radius:12px;font-weight:bold;font-size:16px;cursor:pointer;margin-bottom:12px;width:100%;">Я понимаю и принимаю</button>
+    <button onclick="closeDisclaimer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.6);padding:12px;border-radius:12px;width:100%;">Отмена</button>
+  </div>
 
-    <!-- PSYCHOLOGIST -->
-    <section id="psych" class="section">
-        <div class="card">
-            <span class="badge">Режим: Психолог</span>
-            <h1>Психологическая поддержка</h1>
-            <p>Конфиденциальные беседы 24/7</p>
-        </div>
-        <div class="chat-container">
-            <div class="chat-messages" id="psychChat">
-                <div class="message assistant">🌟 Приветствую! Расскажите, что вас беспокоит.</div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" class="chat-input" id="psychInput" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter')sendToPsych()">
-                <button class="btn" style="width: auto; margin: 0;" onclick="sendToPsych()">➤</button>
-            </div>
-        </div>
-    </section>
+  <!-- ФУТЕР -->
+  <div style="position:fixed;bottom:0;left:0;right:0;background:rgba(10,14,39,0.95);border-top:1px solid rgba(255,255,255,0.1);padding:8px 16px;display:flex;justify-content:center;gap:20px;z-index:90;font-size:12px;">
+    <a href="privacy_policy.html" style="color:rgba(255,255,255,0.5);text-decoration:none;">Политика конфиденциальности</a>
+    <a href="terms_of_service.html" style="color:rgba(255,255,255,0.5);text-decoration:none;">Пользовательское соглашение</a>
+    <span style="color:rgba(255,255,255,0.3);">© 2026 Aura AI</span>
+  </div>
+  <div style="height:40px;"></div>
 
-</div>
+  <script>
+    // БЛОКИРОВКА PULL-TO-REFRESH
+    (function () {
+      let startY = 0;
+      document.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 1) startY = e.touches[0].clientY;
+      }, { passive: true });
 
-<script>
-// !!! ВСТАВЬ СЮДА СВОЙ ANON KEY (это безопасно, это публичный ключ) !!!
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwMDAwMDAwMH0.EXAMPLE'; 
-// Замени выше на свой ключ из Project Settings → API → anon public
+      document.addEventListener('touchmove', function (e) {
+        if (e.touches.length !== 1) return;
+        const y = e.touches[0].clientY;
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        if (scrollTop <= 0 && y > startY) {
+          e.preventDefault();
+          return false;
+        }
+      }, { passive: false });
 
-const SUPABASE_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co';
+      document.body.style.overscrollBehavior = 'none';
+    })();
 
-let currentImage = null;
-let requestCount = 0;
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
-function showSection(name) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById(name).classList.add('active');
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-}
-
-function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
-function handleDragLeave(e) { e.currentTarget.classList.remove('dragover'); }
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
-    if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
-}
-
-function handleFileSelect(e) {
-    if (e.target.files[0]) processFile(e.target.files[0]);
-}
-
-function processFile(file) {
-    if (!file.type.startsWith('image/')) {
-        alert('Выберите изображение');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        currentImage = e.target.result;
-        document.getElementById('preview').src = currentImage;
-        document.getElementById('preview').style.display = 'block';
+    const CONFIG = {
+      SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
+      SUPABASE_KEY: SUPABASE_KEY,
+      DAILY_LIMIT: 20,
+      MODES: {
+        tutor: { 
+          name: 'Репетитор', 
+          free: true, 
+          system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй каждый шаг простым языком. Для математики: показывай формулы.' 
+        },
+        lawyer: { 
+          name: 'Юрист', 
+          free: false, 
+          system: 'Ты старший юрист с 15-летним стажем в РФ. Давай ДЕТАЛЬНЫЕ консультации с конкретными статьями ГК РФ, НК РФ, ТК РФ. Давай сроки и стратегии.' 
+        },
+        psych: { 
+          name: 'Психолог', 
+          free: false, 
+          system: 'Ты клинический психолог, специалист по КПТ. Проводи терапию: давай домашние задания, дневники мыслей, техники самопомощи. Глубинная работа.' 
+        }
+      }
     };
-    reader.readAsDataURL(file);
-}
 
-async function solveTask() {
-    if (!currentImage) {
-        alert('Сначала загрузите фото задачи');
-        return;
+    const DISCLAIMERS = {
+      lawyer: `<strong>Информационный характер услуги</strong><br><br>Режим «Юрист» предоставляет общие справочно-информационные консультации с использованием искусственного интеллекта.<br><br>⚠️ <strong>Важно:</strong><br>• Это не заменяет квалифицированную юридическую помощь<br>• Ответы не являются официальной правовой консультацией по Закону о правовой помощи РФ<br>• Для сложных дел рекомендуем обратиться к адвокату`,
+      psych: `<strong>Не медицинская услуга</strong><br><br>Режим «Психолог» предоставляет информационную поддержку и техники самопомощи.<br><br>⚠️ <strong>Важно:</strong><br>• ИИ не заменяет клинического психолога<br>• Не используйте при серьезных психических расстройствах<br>• При кризисе: 8-800-2000-122 или 112`
+    };
+
+    let currentMode = 'tutor';
+    let messageCount = 0;
+    let stream = null;
+    let pendingMode = null;
+    let isPro = false;
+    let currentImageData = null;
+
+    function checkProStatus() {
+      const proExpiry = localStorage.getItem('aura_pro_expiry');
+      if (!proExpiry) return false;
+      const expiryDate = new Date(proExpiry);
+      if (new Date() > expiryDate) {
+        localStorage.removeItem('aura_pro');
+        localStorage.removeItem('aura_pro_expiry');
+        return false;
+      }
+      return true;
     }
 
-    const btn = document.getElementById('solveBtn');
-    const loading = document.getElementById('solverLoading');
-    const resultBox = document.getElementById('solverResult');
-    const prompt = document.getElementById('promptInput').value || 'Реши эту задачу пошагово с объяснениями';
+    function updateOnlineStatus() {
+      const offlineScreen = document.getElementById('offline-screen');
+      const isOnline = navigator.onLine;
+      offlineScreen.style.display = isOnline ? 'none' : 'flex';
+    }
 
-    btn.disabled = true;
-    loading.classList.add('active');
-    resultBox.style.display = 'none';
-    resultBox.classList.remove('error');
+    function checkConnection() {
+      if (navigator.onLine) {
+        updateOnlineStatus();
+        showToast('✅ Интернет есть');
+      } else {
+        showToast('❌ Нет связи');
+      }
+    }
 
-    try {
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/solve-vision`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
-                image: currentImage,
-                prompt: prompt,
-                model: 'deepseek/deepseek-chat'
-            })
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    window.addEventListener('beforeunload', function () {
+      const messages = document.getElementById('messages').innerHTML;
+      localStorage.setItem('aura_chat_backup', JSON.stringify({
+        html: messages,
+        mode: currentMode,
+        count: messageCount,
+        time: new Date().toISOString()
+      }));
+    });
+
+    window.onload = () => {
+      isPro = checkProStatus();
+      
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+      }
+
+      const savedChat = localStorage.getItem('aura_chat_backup');
+      if (savedChat) {
+        const chatData = JSON.parse(savedChat);
+        const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
+        if (hoursDiff < 24 && chatData.html) {
+          document.getElementById('messages').innerHTML = chatData.html;
+        }
+      }
+
+      updateOnlineStatus();
+      const today = new Date().toDateString();
+      messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
+      updateCredits();
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 20;
+        document.getElementById('loader-bar').style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => document.getElementById('splash').remove(), 500);
+            document.getElementById('app').classList.add('visible');
+          }, 500);
+        }
+      }, 200);
+
+      const msgInput = document.getElementById('msg-input');
+      msgInput.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+
+      msgInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    };
+
+    function handleModeClick(mode) {
+      const modeConfig = CONFIG.MODES[mode];
+      if (!modeConfig.free && !isPro) {
+        showPaywall();
+        return;
+      }
+      if ((mode === 'lawyer' || mode === 'psych') && !localStorage.getItem(`disclaimer_${mode}_accepted`)) {
+        pendingMode = mode;
+        document.getElementById('disclaimer-text').innerHTML = DISCLAIMERS[mode];
+        document.getElementById('disclaimer-modal').style.display = 'flex';
+        return;
+      }
+      switchToMode(mode);
+    }
+
+    function switchToMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+      addMessage(`Режим: ${CONFIG.MODES[mode].name}. Чем могу помочь?`, 'ai');
+    }
+
+    function acceptDisclaimer() {
+      if (pendingMode) {
+        localStorage.setItem(`disclaimer_${pendingMode}_accepted`, 'true');
+        switchToMode(pendingMode);
+      }
+      closeDisclaimer();
+    }
+
+    function closeDisclaimer() {
+      document.getElementById('disclaimer-modal').style.display = 'none';
+      pendingMode = null;
+    }
+
+    async function sendMessage(imageData = null) {
+      if (!navigator.onLine) {
+        showToast('Нет интернета');
+        document.getElementById('offline-screen').style.display = 'flex';
+        return;
+      }
+
+      const input = document.getElementById('msg-input');
+      const text = input.value.trim();
+      
+      // Если есть изображение, отправляем через solve-vision
+      if (imageData || currentImageData) {
+        await solveVision(currentImageData || imageData, text || 'Реши эту задачу пошагово');
+        currentImageData = null;
+        input.value = '';
+        return;
+      }
+      
+      if (!text) return;
+
+      if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+        showToast('Лимит 20 решений/день');
+        showPaywall();
+        return;
+      }
+
+      if (navigator.vibrate) navigator.vibrate(50);
+
+      addMessage(text, 'user');
+      input.value = '';
+      input.style.height = 'auto';
+
+      document.getElementById('typing').classList.add('active');
+      document.getElementById('send-btn').disabled = true;
+
+      try {
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            mode: currentMode,
+            message: text,
+            system: CONFIG.MODES[currentMode].system,
+            user_pro: isPro
+          })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        document.getElementById('typing').classList.remove('active');
+
+        if (data.error) throw new Error(data.error);
+        if (!data.answer) throw new Error('Пустой ответ');
+
+        addMessage(data.answer, 'ai');
+
+        if (!isPro) {
+          messageCount++;
+          localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+          updateCredits();
+        }
+      } catch (error) {
+        document.getElementById('typing').classList.remove('active');
+        addMessage('❌ Ошибка: ' + error.message, 'ai');
+      } finally {
+        document.getElementById('send-btn').disabled = false;
+      }
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Отправка фото в DeepSeek Vision
+    async function solveVision(imageBase64, prompt) {
+      if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
+        showToast('Лимит 20 решений/день');
+        showPaywall();
+        return;
+      }
+
+      document.getElementById('typing').classList.add('active');
+      document.getElementById('send-btn').disabled = true;
+      
+      // Показываем превью в чате
+      addMessage(`[Фото] ${prompt}`, 'user', imageBase64);
+
+      try {
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            image: imageBase64,
+            prompt: prompt,
+            model: 'deepseek/deepseek-chat'
+          })
         });
 
         const data = await response.json();
-        
+        document.getElementById('typing').classList.remove('active');
+
         if (!response.ok) {
-            throw new Error(data.error || `Ошибка ${response.status}`);
+          throw new Error(data.error || `Ошибка ${response.status}`);
         }
 
-        resultBox.textContent = data.answer || 'Нет ответа';
-        resultBox.style.display = 'block';
-        requestCount++;
+        addMessage(data.answer, 'ai');
 
-    } catch (error) {
-        console.error('Error:', error);
-        resultBox.innerHTML = `<strong>❌ Ошибка:</strong> ${error.message}<br><br>
-        <small>Если ошибка 400/500:<br>
-        1. Проверьте, что в коде вставлен правильный anon key<br>
-        2. Проверьте, что функция solve-vision задеплоена (supabase functions deploy)<br>
-        3. Проверьте логи в Supabase Dashboard → Logs → Edge Functions</small>`;
-        resultBox.classList.add('error');
-        resultBox.style.display = 'block';
-    } finally {
-        btn.disabled = false;
-        loading.classList.remove('active');
+        if (!isPro) {
+          messageCount++;
+          localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+          updateCredits();
+        }
+      } catch (error) {
+        document.getElementById('typing').classList.remove('active');
+        addMessage('❌ Ошибка: ' + error.message + '\n\nПроверьте подключение или попробуйте позже.', 'ai');
+      } finally {
+        document.getElementById('send-btn').disabled = false;
+      }
     }
-}
 
-// Chat functions (demo mode - замени на реальные вызовы к бэкенду)
-function sendToLawyer() {
-    const input = document.getElementById('lawyerInput');
-    const msg = input.value.trim();
-    if (!msg) return;
+    async function openCamera() {
+      document.getElementById('camera-modal').classList.add('active');
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        document.getElementById('camera-video').srcObject = stream;
+      } catch (err) {
+        showToast('Нет доступа к камере');
+        closeCamera();
+      }
+    }
+
+    function takePhoto() {
+      const video = document.getElementById('camera-video');
+      const canvas = document.getElementById('camera-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      closeCamera();
+
+      // Показываем выбор: распознать текст или отправить AI
+      showPhotoActions(imageData);
+    }
+
+    function showPhotoActions(imageData) {
+      currentImageData = imageData;
+      
+      const div = document.createElement('div');
+      div.className = 'message ai';
+      div.innerHTML = `
+        <div>📸 Фото загружено. Что сделать?</div>
+        <div class="photo-actions">
+          <button class="photo-action-btn" onclick="processOCR()">📝 Распознать текст</button>
+          <button class="photo-action-btn secondary" onclick="sendMessage()">🤖 Решить через AI</button>
+        </div>
+      `;
+      document.getElementById('messages').appendChild(div);
+      document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+    }
+
+    async function processOCR() {
+      if (!currentImageData) return;
+      showToast('Распознаю текст...');
+      try {
+        const result = await Tesseract.recognize(currentImageData, 'rus+eng');
+        document.getElementById('msg-input').value = result.data.text;
+        showToast('Текст распознан! Проверьте и нажмите отправить');
+      } catch (err) {
+        showToast('Ошибка распознавания');
+      }
+    }
+
+    function closeCamera() {
+      document.getElementById('camera-modal').classList.remove('active');
+      if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+    }
+
+    function handleFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { showToast('Файл слишком большой'); return; }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        showPhotoActions(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function initPayment() {
+      showToast('Создание платежа...');
+      try {
+        const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
+        localStorage.setItem('user_id', userId);
+
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            return_url: 'https://arharius.github.io/aura-pay/?payment=success'
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        if (data.confirmation_url) window.location.href = data.confirmation_url;
+
+      } catch (err) {
+        showToast('Ошибка оплаты: ' + err.message);
+      }
+    }
+
+    function addMessage(content, type, image = null) {
+      const div = document.createElement('div');
+      div.className = `message ${type}`;
+      div.innerHTML = image && type === 'user' 
+        ? `<img src="${image}" style="max-width:100%;margin-bottom:8px;border-radius:8px;"><br>${content}` 
+        : content;
+      document.getElementById('messages').appendChild(div);
+      document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+    }
+
+    function updateCredits() {
+      const el = document.getElementById('credits-display');
+      el.textContent = isPro ? '∞/∞' : `${CONFIG.DAILY_LIMIT - messageCount}/${CONFIG.DAILY_LIMIT}`;
+      if (!isPro && messageCount >= 15) el.style.color = '#ff1744';
+    }
+
+    function showPaywall() { document.getElementById('paywall').classList.add('active'); }
+    function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
     
-    addMessage('lawyerChat', msg, 'user');
-    input.value = '';
-    
-    setTimeout(() => {
-        addMessage('lawyerChat', '⚖️ Анализирую ваш вопрос согласно законодательству РФ...', 'assistant');
-    }, 1000);
-}
+    function showToast(msg) { 
+      const t = document.getElementById('toast'); 
+      t.textContent = msg; 
+      t.classList.add('show'); 
+      setTimeout(() => t.classList.remove('show'), 3000); 
+    }
 
-function sendToPsych() {
-    const input = document.getElementById('psychInput');
-    const msg = input.value.trim();
-    if (!msg) return;
-    
-    addMessage('psychChat', msg, 'user');
-    input.value = '';
-    
-    setTimeout(() => {
-        addMessage('psychChat', '🌱 Благодарю за доверие. Давайте разберем эту ситуацию...', 'assistant');
-    }, 1000);
-}
-
-function addMessage(chatId, text, sender) {
-    const chat = document.getElementById(chatId);
-    const msg = document.createElement('div');
-    msg.className = `message ${sender}`;
-    msg.textContent = text;
-    chat.appendChild(msg);
-    chat.scrollTop = chat.scrollHeight;
-}
-
-// Проверка что ключ вставлен
-if (SUPABASE_ANON_KEY.includes('EXAMPLE')) {
-    alert('⚠️ Вставьте свой Supabase Anon Key в код (строка 272) перед публикацией!');
-}
-</script>
-
+    // Проверка успешной оплаты
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      localStorage.setItem('aura_pro', 'true');
+      localStorage.setItem('aura_pro_expiry', expiryDate.toISOString());
+      isPro = true;
+      updateCredits();
+      showToast('✅ PRO активирован на 30 дней!');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  </script>
 </body>
 </html>
