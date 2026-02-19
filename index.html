@@ -36,11 +36,14 @@
         header { padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .logo { font-weight: 900; font-size: 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .credits { font-size: 12px; color: var(--accent); background: rgba(0, 212, 255, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 212, 255, 0.3); }
+        .credits.test { color: #00ff00; border-color: #00ff00; background: rgba(0, 255, 0, 0.1); }
         
         .mode-tabs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; }
         .mode-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
         .mode-tab.active { background: rgba(0, 212, 255, 0.2); color: var(--accent); border-color: var(--accent); }
         .mode-tab.pro { opacity: 0.6; }
+        .mode-tab.pro.locked { opacity: 0.3; position: relative; }
+        .mode-tab.pro.locked::after { content: '🔒'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 10px; }
         
         .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 180px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         .chat-container { display: flex; flex-direction: column; gap: 12px; }
@@ -95,6 +98,9 @@
         #file-input { display: none; }
         #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         
+        .test-banner { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(0, 255, 0, 0.2); color: #00ff00; text-align: center; padding: 4px; font-size: 12px; z-index: 1001; font-weight: bold; }
+        .test-banner.active { display: block; }
+        
         .content, .chat-container { user-select: none; -webkit-user-select: none; }
         .message { user-select: text; -webkit-user-select: text; }
         
@@ -105,6 +111,8 @@
     </style>
 </head>
 <body>
+
+    <div class="test-banner" id="test-banner">🧪 ТЕСТОВЫЙ РЕЖИМ (без лимитов)</div>
 
     <div class="app-container">
         <div id="offline-screen">
@@ -149,14 +157,14 @@
                 </ul>
                 <button class="buy-btn" onclick="initPayment()">Купить PRO</button>
             </div>
-            <button onclick="closePaywall()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 12px; width: 100%;">Продолжить бесплатно (20/день)</button>
+            <button onclick="closePaywall()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 12px; width: 100%;">Продолжить бесплатно (10/день)</button>
         </div>
 
         <div class="app" id="app">
             <header>
                 <div class="logo">AURA AI</div>
                 <div style="display:flex;gap:10px;align-items:center;">
-                    <div class="credits" id="credits-display">20/20</div>
+                    <div class="credits" id="credits-display">10/10</div>
                     <button onclick="clearChat()" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Очистить</button>
                 </div>
             </header>
@@ -169,7 +177,7 @@
                 <div class="chat-container" id="messages">
                     <div class="message ai" id="welcome-message">
                         <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
-                        Бесплатно: 20 решений в день<br>
+                        Бесплатно: 10 решений в день<br>
                         PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
                         1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
                         2. AI решит её за 10 секунд<br>
@@ -221,10 +229,12 @@
 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
+        // ===== КОНФИГУРАЦИЯ =====
         const CONFIG = {
             SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
             SUPABASE_KEY: SUPABASE_KEY,
-            DAILY_LIMIT: 20,
+            DAILY_LIMIT: 10,
+            TEST_PASSWORD: 'aura2024',  // ПАРОЛЬ ДЛЯ ТЕСТОВОГО РЕЖИМА
             MODES: {
                 tutor: { name: 'Репетитор', free: true, system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй простым языком. Используй только эти символы для формул: √, °, ∠, ², ³, ×, ÷. Никакого LaTeX (без \\frac, \\sqrt). Ответ выдели словом "Ответ:".' },
                 lawyer: { name: 'Юрист', free: false, system: 'Ты старший юрист с 15-летним стажем в РФ. Давай ДЕТАЛЬНЫЕ консультации с конкретными статьями ГК РФ, НК РФ, ТК РФ. Давай сроки и стратегии.' },
@@ -235,6 +245,39 @@
         let currentMode = 'tutor';
         let messageCount = 0;
         let stream = null;
+
+        // ===== ТЕСТОВЫЙ РЕЖИМ С ПАРОЛЕМ =====
+        let testMode = localStorage.getItem('aura_test_mode') === 'true';
+        
+        function updateTestMode() {
+            const banner = document.getElementById('test-banner');
+            const credits = document.getElementById('credits-display');
+            if (testMode) {
+                banner.classList.add('active');
+                credits.classList.add('test');
+                credits.textContent = 'TEST';
+            } else {
+                banner.classList.remove('active');
+                credits.classList.remove('test');
+                updateCredits();
+            }
+            updateModeTabs();
+        }
+
+        function toggleTestMode() {
+            testMode = !testMode;
+            localStorage.setItem('aura_test_mode', testMode);
+            updateTestMode();
+            showToast(testMode ? '🧪 Тестовый режим ВКЛ' : '🔒 Тестовый режим ВЫКЛ');
+        }
+        // ===== КОНЕЦ ТЕСТОВОГО РЕЖИМА =====
+
+        let lastTask = { question: null, image: null, shortAnswer: null };
+
+        function isExplanationRequest(text) {
+            const patterns = [/подробнее/i, /объясни/i, /не понял/i, /непонятно/i, /почему/i, /откуда/i, /как получилось/i, /расскажи/i, /поясни/i, /детальнее/i, /разжуй/i, /поподробнее/i, /почему именно/i, /откуда взялось/i, /как это/i];
+            return patterns.some(p => p.test(text)) && text.length < 50;
+        }
 
         function checkProStatus() {
             const proExpiry = localStorage.getItem('aura_pro_expiry');
@@ -249,12 +292,9 @@
         }
 
         let isPro = checkProStatus();
-        const isAdmin = false;
 
         function updateOnlineStatus() {
-            const offlineScreen = document.getElementById('offline-screen');
-            const isOnline = navigator.onLine;
-            offlineScreen.style.display = isOnline ? 'none' : 'flex';
+            document.getElementById('offline-screen').style.display = navigator.onLine ? 'none' : 'flex';
         }
 
         function checkConnection() {
@@ -279,43 +319,36 @@
             }));
         });
 
-function cleanLatex(text) {
-    if (!text) return '';
-    return text
-        // Убираем блоки \[ ... \] вместе с переносами
-        .replace(/\\\[(\s*\n?|\n?\s*)/g, '')
-        .replace(/(\s*\n?|\n?\s*)\\\]/g, '')
-        
-        // Убираем inline \( ... \)
-        .replace(/\\\(\s*/g, '')
-        .replace(/\s*\\\)/g, '')
-        
-        // Убираем \, (пробелы в LaTeX)
-        .replace(/\\,/g, ' ')
-        
-        // Математические символы
-        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-        .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-        .replace(/\\sqrt(\s|$)/g, '√$1')
-        .replace(/\\times|\\cdot/g, '×')
-        .replace(/\\div/g, '÷')
-        .replace(/\\pi/g, 'π')
-        .replace(/\\alpha/g, 'α')
-        .replace(/\\beta/g, 'β')
-        .replace(/\\gamma/g, 'γ')
-        .replace(/\\leq/g, '≤')
-        .replace(/\\geq/g, '≥')
-        
-        // Убираем остальные команды \команда{...}
-        .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
-        
-        // Степени: x^2 → x<sup>2</sup>
-        .replace(/\^{?(\d+)}?/g, '<sup>$1</sup>')
-        
-        // Убираем лишние пустые строки
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-}
+        function cleanLatex(text) {
+            if (!text) return '';
+            return text
+                .replace(/\\\[(\s*\n?|\n?\s*)/g, '')
+                .replace(/(\s*\n?|\n?\s*)\\\]/g, '')
+                .replace(/\\\(\s*/g, '')
+                .replace(/\s*\\\)/g, '')
+                .replace(/\\,/g, ' ')
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+                .replace(/\\sqrt(\s|$)/g, '√$1')
+                .replace(/\\angle/g, '∠')
+                .replace(/\\degree/g, '°')
+                .replace(/\\times|\\cdot/g, '×')
+                .replace(/\\div/g, '÷')
+                .replace(/\\pi/g, 'π')
+                .replace(/\\alpha/g, 'α')
+                .replace(/\\beta/g, 'β')
+                .replace(/\\gamma/g, 'γ')
+                .replace(/\\leq/g, '≤')
+                .replace(/\\geq/g, '≥')
+                .replace(/\\neq/g, '≠')
+                .replace(/\\approx/g, '≈')
+                .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
+                .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
+                .replace(/\^{?(\d+)}?/g, '<sup>$1</sup>')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
         window.onload = () => {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
@@ -333,9 +366,11 @@ function cleanLatex(text) {
             }
 
             updateOnlineStatus();
+            updateTestMode();
+            
             const today = new Date().toDateString();
             messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
-            updateCredits();
+            if (!testMode) updateCredits();
 
             let progress = 0;
             const interval = setInterval(() => {
@@ -364,18 +399,35 @@ function cleanLatex(text) {
             });
         };
 
+        function updateModeTabs() {
+            const hasAccess = isPro || testMode;
+            document.querySelectorAll('.mode-tab.pro').forEach(tab => {
+                if (!hasAccess) {
+                    tab.classList.add('locked');
+                } else {
+                    tab.classList.remove('locked');
+                }
+            });
+        }
+
         function setMode(mode) {
             const modeConfig = CONFIG.MODES[mode];
-            if (!modeConfig.free && !isPro && !isAdmin) {
+            
+            if (!modeConfig.free && !isPro && !testMode) {
+                showToast('🔒 Доступно только в PRO');
                 showPaywall();
                 return;
             }
+            
             currentMode = mode;
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+            
+            if (mode !== 'tutor') {
+                showToast(`Режим: ${modeConfig.name}`);
+            }
         }
 
-        // ОТПРАВКА ТЕКСТОМ
         async function sendMessage() {
             if (!navigator.onLine) {
                 showToast('Нет интернета');
@@ -386,9 +438,73 @@ function cleanLatex(text) {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if (!text) return;
+            
+            // ===== ПРОВЕРКА ПАРОЛЯ ДЛЯ ТЕСТОВОГО РЕЖИМА =====
+            if (text.startsWith('/testmode ')) {
+                const password = text.split(' ')[1];
+                if (password === CONFIG.TEST_PASSWORD) {
+                    toggleTestMode();
+                } else {
+                    showToast('❌ Неверный пароль');
+                }
+                input.value = '';
+                return;
+            }
+            // ===== КОНЕЦ ПРОВЕРКИ =====
 
-            if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
-                showToast('Лимит 20 решений/день');
+            if (isExplanationRequest(text) && lastTask.question) {
+                const detailedPrompt = `Ранее я решил задачу: "${lastTask.question}"
+
+Моё краткое решение было: "${lastTask.shortAnswer}"
+
+Пользователь просит: "${text}"
+
+Объясни эту же задачу МАКСИМАЛЬНО подробно:
+1. Разбери каждый шаг отдельно
+2. Объясни, почему используем именно эти формулы/числа
+3. Приведи аналогии из жизни (если возможно)
+4. Покажи, какие ошибки могут возникнуть
+5. Проверь ответ другим способом
+
+Пиши простым языком, как будто объясняешь другу.`;
+                
+                addMessage(text, 'user');
+                input.value = '';
+                input.style.height = 'auto';
+                
+                document.getElementById('typing').classList.add('active');
+                
+                try {
+                    const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        },
+                        body: JSON.stringify({
+                            mode: currentMode,
+                            message: detailedPrompt,
+                            system: CONFIG.MODES[currentMode].system,
+                            user_pro: isPro || testMode
+                        })
+                    });
+
+                    const data = await response.json();
+                    document.getElementById('typing').classList.remove('active');
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    addMessage(cleanLatex(data.answer), 'ai');
+                    
+                } catch (error) {
+                    document.getElementById('typing').classList.remove('active');
+                    addMessage('❌ Ошибка: ' + (error.message || 'Не удалось получить объяснение'), 'ai');
+                }
+                return;
+            }
+
+            if (!isPro && !testMode && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 10 решений/день');
                 showPaywall();
                 return;
             }
@@ -413,7 +529,7 @@ function cleanLatex(text) {
                         mode: currentMode,
                         message: text,
                         system: CONFIG.MODES[currentMode].system,
-                        user_pro: isPro || isAdmin
+                        user_pro: isPro || testMode
                     })
                 });
 
@@ -424,9 +540,15 @@ function cleanLatex(text) {
 
                 if (data.error) throw new Error(typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
                 
+                lastTask = {
+                    question: text,
+                    image: null,
+                    shortAnswer: data.answer.substring(0, 500)
+                };
+                
                 addMessage(cleanLatex(data.answer), 'ai');
 
-                if (!isPro && !isAdmin) {
+                if (!isPro && !testMode) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
                     updateCredits();
@@ -440,7 +562,6 @@ function cleanLatex(text) {
             }
         }
 
-        // ОТПРАВКА ФОТО (ИСПРАВЛЕННАЯ - ПОЛЕ imageBase64)
         async function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
@@ -455,24 +576,20 @@ function cleanLatex(text) {
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
             
-            // КАЧЕСТВО 0.8 - оптимально для размера
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             closeCamera();
             
-            console.log('📷 Фото с камеры:', imageData.substring(0, 50) + '...');
             await processImage(imageData, '[📷 Фото с камеры]');
         }
 
         async function processImage(imageData, caption) {
-            // Проверка данных
             if (!imageData || typeof imageData !== 'string' || !imageData.startsWith('data:image')) {
-                console.error('❌ Неверные данные фото:', imageData);
                 showToast('❌ Ошибка: фото повреждено');
                 return;
             }
             
-            if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
-                showToast('Лимит 20 решений/день');
+            if (!isPro && !testMode && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 10 решений/день');
                 showPaywall();
                 return;
             }
@@ -484,18 +601,11 @@ function cleanLatex(text) {
             document.getElementById('send-btn').disabled = true;
 
             try {
-                // 🔥 ВАЖНО: Отправляем как imageBase64 (как ожидает твой бэкенд)
                 const payload = {
                     imageBase64: imageData,
                     mode: currentMode,
-                    user_pro: isPro || isAdmin
+                    user_pro: isPro || testMode
                 };
-                
-                console.log('📤 Отправка на сервер...');
-                console.log('📝 Тело запроса:', JSON.stringify({
-                    ...payload,
-                    imageBase64: payload.imageBase64.substring(0, 50) + '... [truncated]'
-                }));
 
                 const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
                     method: 'POST',
@@ -509,14 +619,11 @@ function cleanLatex(text) {
                 document.getElementById('typing').classList.remove('active');
                 document.getElementById('send-btn').disabled = false;
 
-                console.log('📥 Ответ сервера:', response.status);
-
                 if (!response.ok) {
                     let errorText = `Ошибка сервера: ${response.status}`;
                     try {
                         const errData = await response.json();
                         errorText = errData.error || errData.message || errorText;
-                        console.error('❌ Ошибка от сервера:', errData);
                     } catch(e) {
                         errorText = await response.text() || errorText;
                     }
@@ -533,9 +640,15 @@ function cleanLatex(text) {
                     throw new Error('Пустой ответ от сервера');
                 }
                 
+                lastTask = {
+                    question: caption,
+                    image: imageData,
+                    shortAnswer: data.answer.substring(0, 500)
+                };
+                
                 addMessage(cleanLatex(data.answer), 'ai');
 
-                if (!isPro && !isAdmin) {
+                if (!isPro && !testMode) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
                     updateCredits();
@@ -550,26 +663,20 @@ function cleanLatex(text) {
                     errorMessage = error;
                 } else if (error && error.message) {
                     errorMessage = error.message;
-                } else {
-                    try {
-                        errorMessage = JSON.stringify(error);
-                    } catch(e) {
-                        errorMessage = 'Ошибка сети';
-                    }
                 }
                 
-                console.error('❌ ProcessImage error:', error);
                 addMessage('❌ Ошибка: ' + errorMessage, 'ai');
                 showToast('❌ Не удалось решить');
             }
         }
 
         async function openCamera() {
-            if (currentMode !== 'tutor' && !isPro && !isAdmin) {
-                showToast('Камера доступна в режиме Репетитора или PRO');
+            if (currentMode !== 'tutor' && !isPro && !testMode) {
+                showToast('Камера в PRO-режимах доступна только с подпиской');
                 showPaywall();
                 return;
             }
+            
             document.getElementById('camera-modal').classList.add('active');
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
@@ -602,7 +709,6 @@ function cleanLatex(text) {
             const reader = new FileReader();
             
             reader.onload = (e) => {
-                console.log('📁 Файл загружен:', e.target.result.substring(0, 50) + '...');
                 processImage(e.target.result, '[📷 Фото из галереи]');
             };
             
@@ -657,12 +763,28 @@ function cleanLatex(text) {
 
         function updateCredits() {
             const el = document.getElementById('credits-display');
-            el.textContent = isPro ? '∞/∞' : `${CONFIG.DAILY_LIMIT - messageCount}/${CONFIG.DAILY_LIMIT}`;
-            if (!isPro && messageCount >= 15) el.style.color = '#ff1744';
+            if (testMode) {
+                el.textContent = 'TEST';
+                el.classList.add('test');
+            } else if (isPro) {
+                el.textContent = '∞/∞';
+                el.classList.remove('test');
+            } else {
+                const remaining = Math.max(0, CONFIG.DAILY_LIMIT - messageCount);
+                el.textContent = `${remaining}/${CONFIG.DAILY_LIMIT}`;
+                el.classList.remove('test');
+                if (remaining <= 3) el.style.color = '#ff1744';
+                else el.style.color = '';
+            }
         }
 
-        function showPaywall() { document.getElementById('paywall').classList.add('active'); }
-        function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
+        function showPaywall() { 
+            document.getElementById('paywall').classList.add('active'); 
+        }
+        
+        function closePaywall() { 
+            document.getElementById('paywall').classList.remove('active'); 
+        }
         
         function showToast(msg) { 
             const t = document.getElementById('toast'); 
@@ -674,20 +796,19 @@ function cleanLatex(text) {
         function clearChat() {
             if(confirm('Удалить всю историю чата?')) {
                 localStorage.removeItem('aura_chat_backup');
-                localStorage.removeItem(`usage_${new Date().toDateString()}`);
+                
+                lastTask = { question: null, image: null, shortAnswer: null };
                 
                 document.getElementById('messages').innerHTML = `
                     <div class="message ai">
                         <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
-                        Бесплатно: 20 решений в день<br>
+                        Бесплатно: 10 решений в день<br>
                         PRO: 990₽ / 30 дней<br><br>
                         Загрузите фото задачи выше 👆
                     </div>
                 `;
                 
-                messageCount = 0;
-                updateCredits();
-                showToast('✅ Чат очищен');
+                showToast('✅ Чат очищен (счетчик сохранен)');
             }
         }
 
@@ -699,6 +820,7 @@ function cleanLatex(text) {
             localStorage.setItem('aura_pro_expiry', expiryDate.toISOString());
             isPro = true;
             updateCredits();
+            updateModeTabs();
             showToast('✅ PRO активирован на 30 дней!');
             window.history.replaceState({}, document.title, window.location.pathname);
         }
