@@ -2,625 +2,733 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura AI - Решение задач</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
+    <link rel="manifest" href="manifest.json">
+    <title>Aura AI - Решение ЦДЗ</title>
+    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
+        :root {
+            --bg: #0a0e27;
+            --card: rgba(255, 255, 255, 0.05);
+            --accent: #00d4ff;
+            --accent2: #7000ff;
+            --pro: #ffd700;
+            --max-width: 600px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        html, body { overscroll-behavior-y: none; touch-action: pan-y; height: 100%; overflow: hidden; width: 100%; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); }
+        body { color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; }
+        
+        .app-container { width: 100%; max-width: var(--max-width); height: 100vh; position: relative; background: linear-gradient(135deg, #0a0e27 0%, #1a1f4b 100%); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        #splash { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .splash-logo { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .loader { width: 200px; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden; margin-top: 20px; }
+        .loader-bar { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s; }
+        
+        .app { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.3s; overflow: hidden; position: relative; }
+        .app.visible { opacity: 1; }
+        
+        header { padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .logo { font-weight: 900; font-size: 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .credits { font-size: 12px; color: var(--accent); background: rgba(0, 212, 255, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 212, 255, 0.3); }
+        
+        .mode-tabs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; }
+        .mode-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .mode-tab.active { background: rgba(0, 212, 255, 0.2); color: var(--accent); border-color: var(--accent); }
+        .mode-tab.pro { opacity: 0.6; }
+        
+        .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 180px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .chat-container { display: flex; flex-direction: column; gap: 12px; }
+        
+        .message { max-width: 90%; padding: 14px 18px; border-radius: 18px; font-size: 15px; line-height: 1.6; animation: messageIn 0.3s ease-out; word-wrap: break-word; }
+        @keyframes messageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.ai { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.1); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message img { max-width: 100%; border-radius: 8px; margin: 8px 0; max-height: 300px; object-fit: contain; display: block; }
+        
+        .message.ai strong { color: var(--accent); }
+        .message.ai .answer-box { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--pro); padding: 10px; border-radius: 8px; margin-top: 10px; display: inline-block; color: var(--pro); font-weight: bold; }
+        
+        .input-container { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10, 14, 39, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 16px 24px 16px; z-index: 100; }
+        .input-actions { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .action-btn { background: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 8px 14px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+        .action-btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.2); }
+        .action-btn.clear { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border-color: rgba(255, 107, 107, 0.3); }
+        
+        .input-wrapper { display: flex; gap: 10px; align-items: flex-end; background: rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 8px 16px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .message-input { flex: 1; background: none; border: none; color: white; font-size: 15px; padding: 8px 0; max-height: 120px; resize: none; font-family: inherit; outline: none; }
+        .message-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+        .send-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); border: none; color: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; flex-shrink: 0; }
+        .send-btn:disabled { opacity: 0.3; background: #666; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 1000; flex-direction: column; }
+        .modal.active { display: flex; }
+        .camera-preview { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
+        .camera-preview video, .camera-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .camera-controls { padding: 20px; display: flex; justify-content: center; gap: 30px; background: rgba(0, 0, 0, 0.8); }
+        .camera-btn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 4px solid rgba(255, 255, 255, 0.3); cursor: pointer; }
+        .close-modal { position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; z-index: 10; }
+        
+        .paywall { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.98); z-index: 2000; display: none; flex-direction: column; padding: 24px; overflow-y: auto; }
+        .paywall.active { display: flex; }
+        .paywall-title { font-size: 28px; font-weight: 900; margin-bottom: 8px; color: var(--pro); text-align: center; }
+        .pricing-card { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 24px; margin-bottom: 16px; border-color: var(--pro); background: rgba(255, 215, 0, 0.05); }
+        .price { font-size: 32px; font-weight: 900; margin: 12px 0; }
+        .price-features { list-style: none; font-size: 14px; color: rgba(255, 255, 255, 0.8); margin: 16px 0; }
+        .price-features li { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .buy-btn { width: 100%; padding: 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--pro), #ffed4e); color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
+        
+        .typing-indicator { display: none; align-self: flex-start; background: var(--card); padding: 12px 18px; border-radius: 18px; border-bottom-left-radius: 4px; align-items: center; gap: 8px; color: rgba(255, 255, 255, 0.6); }
+        .typing-indicator.active { display: flex; }
+        .typing-dots { display: flex; gap: 4px; }
+        .typing-dots span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        
+        .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(0, 0, 0, 0.9); color: white; padding: 12px 24px; border-radius: 24px; font-size: 14px; z-index: 3000; transition: transform 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        
+        #file-input { display: none; }
+        #offline-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9998; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        
+        .content, .chat-container { user-select: none; -webkit-user-select: none; }
+        .message { user-select: text; -webkit-user-select: text; }
+        
+        @media (min-width: 601px) {
+            body { background: #050817; }
+            .app-container { border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
         }
         
-        .glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .message {
-            animation: slideIn 0.3s ease-out;
-            word-wrap: break-word;
-        }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .loading-dots:after {
-            content: '...';
-            animation: dots 1.5s steps(5, end) infinite;
-        }
-        
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-        
-        .camera-preview {
-            width: 100%;
-            max-height: 300px;
-            object-fit: cover;
-            border-radius: 12px;
-        }
-        
-        #videoElement {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 12px;
-            background: #000;
-        }
-        
-        .credit-badge {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        .admin-badge {
-            background: #ef4444;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-        
-        pre {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 16px;
-            border-radius: 8px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        
-        code {
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-        }
+        #disclaimer-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2500; flex-direction:column; padding:24px; overflow-y:auto; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body>
 
-<!-- Главный контейнер -->
-<div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-2xl">
-    
-    <!-- Шапка -->
-    <div class="glass sticky top-0 z-50 p-4 border-b">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold text-gray-800">Aura AI</h1>
-                <p class="text-xs text-gray-500">Помощник в учебе</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <span id="creditBadge" class="credit-badge">⭐ <span id="credits">3</span></span>
-                <button onclick="toggleAdmin()" class="text-xs text-gray-400 hover:text-gray-600" title="Режим админа">
-                    ⚙️
-                </button>
+    <div class="app-container">
+        <div id="offline-screen">
+            <div style="font-size: 64px; margin-bottom: 20px;">📡</div>
+            <h2 style="margin-bottom: 12px; color: white;">Нет подключения</h2>
+            <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px; max-width: 300px;">Для работы Aura AI требуется интернет</p>
+            <button onclick="checkConnection()" style="background: var(--accent); color: #000; border: none; padding: 12px 32px; border-radius: 24px; font-weight: bold; font-size: 16px; cursor: pointer;">Повторить</button>
+        </div>
+
+        <div id="splash">
+            <div class="splash-logo">AURA AI</div>
+            <div style="color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 10px;">Решение ЦДЗ и ГДЗ по фото</div>
+            <div class="loader">
+                <div class="loader-bar" id="loader-bar"></div>
             </div>
         </div>
-        
-        <!-- Индикатор режима админа -->
-        <div id="adminPanel" class="hidden mt-2 p-2 bg-red-50 rounded-lg border border-red-200">
-            <span class="admin-badge">ADMIN MODE</span>
-            <span class="text-xs text-red-600 ml-2">Баланс: ∞</span>
+
+        <div class="modal" id="camera-modal">
+            <button class="close-modal" onclick="closeCamera()">✕</button>
+            <div class="camera-preview">
+                <video id="camera-video" autoplay playsinline></video>
+                <canvas id="camera-canvas" style="display:none;"></canvas>
+            </div>
+            <div class="camera-controls">
+                <button class="camera-btn" onclick="takePhoto()"></button>
+            </div>
         </div>
+
+        <div class="paywall" id="paywall">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div class="paywall-title">👑 PRO Версия</div>
+                <div style="color: rgba(255,255,255,0.6);">Разблокируйте все возможности</div>
+            </div>
+            <div class="pricing-card">
+                <div style="font-size: 18px; font-weight: 700; color: var(--pro);">PRO Доступ</div>
+                <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">30 дней</span></div>
+                <ul class="price-features">
+                    <li>✅ Безлимитное решение задач</li>
+                    <li>✅ Юрист (сложные консультации)</li>
+                    <li>✅ Психолог (глубокая терапия)</li>
+                    <li>✅ Распознавание рукописи</li>
+                </ul>
+                <button class="buy-btn" onclick="initPayment()">Купить PRO</button>
+            </div>
+            <button onclick="closePaywall()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 12px; width: 100%;">Продолжить бесплатно (20/день)</button>
+        </div>
+
+        <div class="app" id="app">
+            <header>
+                <div class="logo">AURA AI</div>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <div class="credits" id="credits-display">20/20</div>
+                    <button onclick="clearChat()" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;">🗑️ Очистить</button>
+                </div>
+            </header>
+            <div class="mode-tabs">
+                <div class="mode-tab active" onclick="setMode('tutor')" data-mode="tutor">📚 Решение задач</div>
+                <div class="mode-tab pro" onclick="setMode('lawyer')" data-mode="lawyer">⚖️ Юрист</div>
+                <div class="mode-tab pro" onclick="setMode('psych')" data-mode="psych">🧠 Психолог</div>
+            </div>
+            <div class="content" id="chat-container">
+                <div class="chat-container" id="messages">
+                    <div class="message ai" id="welcome-message">
+                        <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+                        Бесплатно: 20 решений в день<br>
+                        PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
+                        1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+                        2. AI решит её за 10 секунд<br>
+                        3. Получите пошаговое решение
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typing">
+                    <span>Решаю...</span>
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
+            </div>
+            <div class="input-container">
+                <div class="input-actions">
+                    <button class="action-btn" onclick="openCamera()">📷 Камера</button>
+                    <button class="action-btn" onclick="document.getElementById('file-input').click()">📎 Файл</button>
+                    <button class="action-btn" onclick="showPaywall()">⭐ PRO</button>
+                    <button class="action-btn clear" onclick="clearChat()">🗑️ Очистить</button>
+                </div>
+                <div class="input-wrapper">
+                    <textarea class="message-input" id="msg-input" placeholder="Или введите задачу текстом..." rows="1"></textarea>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+            <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)">
+        </div>
+        <div class="toast" id="toast"></div>
     </div>
 
-    <!-- Кнопка очистки чата -->
-    <div class="px-4 py-2 bg-gray-50 border-b flex justify-between items-center">
-        <span class="text-xs text-gray-500">История сообщений</span>
-        <button onclick="clearChat()" class="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-            🗑️ Очистить чат
-        </button>
-    </div>
+    <script>
+        // БЛОКИРОВКА PULL-TO-REFRESH
+        (function () {
+            let startY = 0;
+            document.addEventListener('touchstart', function (e) {
+                if (e.touches.length === 1) startY = e.touches[0].clientY;
+            }, { passive: true });
 
-    <!-- Область сообщений -->
-    <div id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-4" style="max-height: calc(100vh - 280px);">
-        <!-- Приветственное сообщение -->
-        <div class="message bg-blue-50 p-4 rounded-2xl rounded-tl-none border border-blue-100">
-            <p class="text-gray-800">👋 Привет! Я помогу решить задачи по математике, физике и другим предметам.</p>
-            <p class="text-sm text-gray-600 mt-2">📸 Отправь фото задачи или напиши текстом</p>
-            <p class="text-xs text-gray-500 mt-1">Бесплатных решений: <span id="welcomeCredits">3</span></p>
-        </div>
-    </div>
+            document.addEventListener('touchmove', function (e) {
+                if (e.touches.length !== 1) return;
+                const y = e.touches[0].clientY;
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                if (scrollTop <= 0 && y > startY) {
+                    e.preventDefault();
+                    return false;
+                }
+            }, { passive: false });
 
-    <!-- Область камеры (скрыта по умолчанию) -->
-    <div id="cameraSection" class="hidden p-4 bg-black">
-        <video id="videoElement" autoplay playsinline></video>
-        <canvas id="canvas" class="hidden"></canvas>
-        <div class="flex gap-2 mt-2">
-            <button onclick="capturePhoto()" class="flex-1 bg-white text-black py-3 rounded-lg font-semibold">
-                📸 Сфотографировать
-            </button>
-            <button onclick="closeCamera()" class="px-4 bg-red-500 text-white rounded-lg">
-                ✕
-            </button>
-        </div>
-    </div>
+            document.body.style.overscrollBehavior = 'none';
+        })();
 
-    <!-- Предпросмотр фото -->
-    <div id="photoPreview" class="hidden p-4 bg-gray-100 border-t">
-        <img id="previewImage" class="camera-preview" src="" alt="Preview">
-        <div class="flex gap-2 mt-2">
-            <button onclick="sendPhoto()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold">
-                ✓ Отправить на решение
-            </button>
-            <button onclick="cancelPhoto()" class="px-4 bg-gray-400 text-white rounded-lg">
-                ✕
-            </button>
-        </div>
-    </div>
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
-    <!-- Панель ввода -->
-    <div class="p-4 bg-white border-t shadow-lg">
-        
-        <!-- Кнопки выбора режима -->
-        <div class="flex gap-2 mb-3">
-            <button onclick="openCamera()" class="flex-1 bg-purple-600 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-purple-700 transition">
-                📷 Камера
-            </button>
-            <label class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 transition cursor-pointer">
-                🖼️ Галерея
-                <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFile(this.files[0])">
-            </label>
-        </div>
+        const CONFIG = {
+            SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
+            SUPABASE_KEY: SUPABASE_KEY,
+            DAILY_LIMIT: 20,
+            MODES: {
+                tutor: { name: 'Репетитор', free: true, system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй простым языком. Используй только эти символы для формул: √, °, ∠, ², ³, ×, ÷. Никакого LaTeX (без \\frac, \\sqrt). Ответ выдели словом "Ответ:".' },
+                lawyer: { name: 'Юрист', free: false, system: 'Ты старший юрист с 15-летним стажем в РФ. Давай ДЕТАЛЬНЫЕ консультации с конкретными статьями ГК РФ, НК РФ, ТК РФ. Давай сроки и стратегии.' },
+                psych: { name: 'Психолог', free: false, system: 'Ты клинический психолог, специалист по КПТ. Проводи терапию: давай домашние задания, дневники мыслей, техники самопомощи. Глубинная работа.' }
+            }
+        };
 
-        <!-- Поле ввода текста -->
-        <div class="flex gap-2">
-            <textarea 
-                id="messageInput" 
-                placeholder="Введите задачу..." 
-                class="flex-1 p-3 border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="2"
-                onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendMessage();}"
-            ></textarea>
-            <button onclick="sendMessage()" class="bg-blue-600 text-white px-6 rounded-xl font-semibold hover:bg-blue-700 transition">
-                ➤
-            </button>
-        </div>
-        
-        <p class="text-xs text-gray-400 text-center mt-2">Нажмите Enter для отправки, Shift+Enter для новой строки</p>
-    </div>
-</div>
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        let currentMode = 'tutor';
+        let messageCount = 0;
+        let stream = null;
+        let isAdmin = false;
+        let isPro = false;
+        let window.currentPhoto = null; // Для хранения текущего фото
 
-<script>
-// ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
-let credits = 3;
-let isAdmin = false;
-let currentStream = null;
-let currentPhotoData = null;
-const API_URL = 'https://tgumghgowexcuzlnqnoa.supabase.co/functions/v1';
-
-// ==================== УПРАВЛЕНИЕ БАЛАНСОМ ====================
-
-// Обновление отображения кредитов
-function updateCredits() {
-    const creditsEl = document.getElementById('credits');
-    const welcomeEl = document.getElementById('welcomeCredits');
-    
-    if (isAdmin) {
-        creditsEl.textContent = '∞';
-        if (welcomeEl) welcomeEl.textContent = '∞';
-    } else {
-        creditsEl.textContent = credits;
-        if (welcomeEl) welcomeEl.textContent = credits;
-    }
-}
-
-// Проверка и списание кредитов
-function spendCredit() {
-    if (isAdmin) return true;
-    
-    if (credits <= 0) {
-        addMessage('system', '❌ У вас закончились бесплатные решения. Пополните баланс, чтобы продолжить.');
-        return false;
-    }
-    
-    credits--;
-    updateCredits();
-    return true;
-}
-
-// Переключение режима админа (для тестирования)
-function toggleAdmin() {
-    isAdmin = !isAdmin;
-    const panel = document.getElementById('adminPanel');
-    
-    if (isAdmin) {
-        panel.classList.remove('hidden');
-    } else {
-        panel.classList.add('hidden');
-    }
-    
-    updateCredits();
-    addMessage('system', isAdmin ? '🔓 Режим администратора включен' : '🔒 Режим администратора выключен');
-}
-
-// ==================== ОЧИСТКА ЧАТА ====================
-
-function clearChat() {
-    const container = document.getElementById('chatContainer');
-    // Сохраняем только приветственное сообщение
-    const welcomeHTML = container.innerHTML.split('<!-- Приветственное сообщение -->')[0] || '';
-    
-    container.innerHTML = `
-        <div class="message bg-gray-100 p-3 rounded-lg text-center text-gray-500 text-sm">
-            💬 Чат очищен. Отправьте новую задачу!
-        </div>
-    ` + welcomeHTML;
-    
-    // Не сбрасываем счетчик кредитов!
-}
-
-// ==================== ДОБАВЛЕНИЕ СООБЩЕНИЙ ====================
-
-function addMessage(type, content, isImage = false) {
-    const container = document.getElementById('chatContainer');
-    const div = document.createElement('div');
-    div.className = 'message';
-    
-    if (type === 'user') {
-        div.className += ' bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none ml-auto max-w-[85%]';
-        if (isImage) {
-            div.innerHTML = `<img src="${content}" class="rounded-lg max-w-full mb-2" style="max-height: 200px; object-fit: cover;"><p class="text-sm opacity-75">📷 Фото задачи</p>`;
-        } else {
-            div.innerHTML = formatText(content);
+        // ПРОВЕРКА АДМИНА (включать через консоль: localStorage.setItem('aura_admin', 'true'))
+        if (localStorage.getItem('aura_admin') === 'true') {
+            isAdmin = true;
+            console.log('🔑 ADMIN MODE ACTIVE');
         }
-    } else if (type === 'assistant') {
-        div.className += ' bg-gray-100 text-gray-800 p-4 rounded-2xl rounded-tl-none border border-gray-200 max-w-[95%]';
-        div.innerHTML = formatText(content);
-    } else if (type === 'system') {
-        div.className += ' bg-yellow-50 text-yellow-800 p-3 rounded-xl text-center text-sm border border-yellow-200 mx-auto max-w-[90%]';
-        div.textContent = content;
-    } else if (type === 'loading') {
-        div.id = 'loadingMessage';
-        div.className += ' bg-gray-50 text-gray-600 p-4 rounded-2xl rounded-tl-none border border-gray-200';
-        div.innerHTML = '<span class="loading-dots">Думаю</span>';
-    }
-    
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
 
-// Форматирование текста (LaTeX, код, переносы строк)
-function formatText(text) {
-    if (!text) return '';
-    
-    // Очистка LaTeX разметки для лучшей читаемости
-    text = cleanLatex(text);
-    
-    // Экранирование HTML
-    text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    
-    // Жирный текст
-    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Курсив
-    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Переносы строк
-    text = text.replace(/\n/g, '<br>');
-    
-    // Блоки кода
-    text = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-    
-    // Инлайн-код
-    text = text.replace(/`([^`]+)`/g, '<code style="background:#f1f5f9;padding:2px 4px;border-radius:4px;">$1</code>');
-    
-    return text;
-}
+        function checkProStatus() {
+            const proExpiry = localStorage.getItem('aura_pro_expiry');
+            if (!proExpiry) return false;
+            const expiryDate = new Date(proExpiry);
+            if (new Date() > expiryDate) {
+                localStorage.removeItem('aura_pro');
+                localStorage.removeItem('aura_pro_expiry');
+                return false;
+            }
+            return true;
+        }
 
-// Очистка LaTeX для лучшей читаемости
-function cleanLatex(text) {
-    if (!text) return '';
-    
-    // Заменяем LaTeX дроби на обычные
-    text = text.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)');
-    text = text.replace(/\\dfrac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)');
-    
-    // Убираем \left и \right
-    text = text.replace(/\\left/g, '').replace(/\\right/g, '');
-    
-    // Заменяем \\ на перенос строки
-    text = text.replace(/\\\\/g, '\n');
-    
-    // Убираем лишние пробелы в математических выражениях
-    text = text.replace(/\$\$/g, '');
-    text = text.replace(/\$/g, '');
-    
-    // Заменяем common LaTeX символы
-    const replacements = {
-        '\\times': '×',
-        '\\cdot': '·',
-        '\\div': '÷',
-        '\\pm': '±',
-        '\\le': '≤',
-        '\\leq': '≤',
-        '\\ge': '≥',
-        '\\geq': '≥',
-        '\\ne': '≠',
-        '\\neq': '≠',
-        '\\approx': '≈',
-        '\\infty': '∞',
-        '\\sqrt': '√',
-        '\\pi': 'π',
-        '\\alpha': 'α',
-        '\\beta': 'β',
-        '\\gamma': 'γ',
-        '\\delta': 'δ',
-        '\\sum': 'Σ',
-        '\\int': '∫',
-        '\\to': '→',
-        '\\rightarrow': '→',
-        '\\Rightarrow': '⇒',
-        '\\in': '∈',
-        '\\subset': '⊂',
-        '\\cup': '∪',
-        '\\cap': '∩',
-        '\\emptyset': '∅',
-        '\\forall': '∀',
-        '\\exists': '∃',
-        '\\nabla': '∇',
-        '\\partial': '∂',
-        '\\vec': '',
-        '\\mathbf': '',
-        '\\mathbb': '',
-        '\\text': '',
-        '\\quad': ' ',
-        '\\,': ' ',
-        '\\;': ' ',
-        '\\:': ' ',
-        '\\!': '',
-        '\\{': '{',
-        '\\}': '}'
-    };
-    
-    for (const [latex, symbol] of Object.entries(replacements)) {
-        text = text.split(latex).join(symbol);
-    }
-    
-    return text;
-}
+        isPro = checkProStatus();
 
-// ==================== РАБОТА С КАМЕРОЙ ====================
+        function updateOnlineStatus() {
+            const offlineScreen = document.getElementById('offline-screen');
+            const isOnline = navigator.onLine;
+            offlineScreen.style.display = isOnline ? 'none' : 'flex';
+        }
 
-async function openCamera() {
-    const section = document.getElementById('cameraSection');
-    const video = document.getElementById('videoElement');
-    
-    try {
-        currentStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' }, 
-            audio: false 
+        function checkConnection() {
+            if (navigator.onLine) {
+                updateOnlineStatus();
+                showToast('✅ Интернет есть');
+            } else {
+                showToast('❌ Нет связи');
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        window.addEventListener('beforeunload', function () {
+            const messages = document.getElementById('messages').innerHTML;
+            localStorage.setItem('aura_chat_backup', JSON.stringify({
+                html: messages,
+                mode: currentMode,
+                count: messageCount,
+                time: new Date().toISOString()
+            }));
         });
-        video.srcObject = currentStream;
-        section.classList.remove('hidden');
-    } catch (error) {
-        console.error('Ошибка доступа к камере:', error);
-        addMessage('system', '❌ Не удалось получить доступ к камере. Проверьте разрешения.');
-        
-        // Fallback на фронтальную камеру
-        try {
-            currentStream = await navigator.mediaDevices.getUserMedia({ 
-                video: true, 
-                audio: false 
-            });
-            video.srcObject = currentStream;
-            section.classList.remove('hidden');
-        } catch (fallbackError) {
-            addMessage('system', '❌ Камера недоступна. Используйте загрузку из галереи.');
+
+        function cleanLatex(text) {
+            if (!text) return '';
+            return text
+                .replace(/\\[\[\]\(\)]/g, '')
+                .replace(/\(([a-zA-Z0-9√\s]+)\/\(([a-zA-Z0-9√\s]+)\)\)/g, '$1/$2')
+                .replace(/\(([a-zA-Z0-9√\s]+)\/([a-zA-Z0-9√\s]+)\)/g, '$1/$2')
+                .replace(/(sin|cos|tg|ctg)\(([A-Z0-9°]+)\)/g, '$1 $2')
+                .replace(/\s*=\s*=\s*/g, ' = ')
+                .replace(/\\/g, '')
+                .replace(/\.{4,}/g, '...')
+                .replace(/\s+$/gm, '')
+                .replace(/frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                .replace(/sqrt\{([^}]+)\}/g, '√$1')
+                .replace(/sqrt/g, '√')
+                .replace(/angle/g, '∠')
+                .replace(/degrees?/g, '°')
+                .replace(/cdot|times/g, '×')
+                .replace(/div/g, '÷')
+                .replace(/pi/g, 'π')
+                .replace(/alpha/g, 'α')
+                .replace(/beta/g, 'β')
+                .replace(/gamma/g, 'γ')
+                .replace(/boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
+                .replace(/\n\n\n+/g, '\n\n')
+                .trim();
         }
-    }
-}
 
-function closeCamera() {
-    const section = document.getElementById('cameraSection');
-    const video = document.getElementById('videoElement');
-    
-    if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-        currentStream = null;
-    }
-    
-    video.srcObject = null;
-    section.classList.add('hidden');
-}
+        window.onload = () => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+            }
 
-function capturePhoto() {
-    const video = document.getElementById('videoElement');
-    const canvas = document.getElementById('canvas');
-    const context = canvas.getContext('2d');
-    
-    // Устанавливаем размер canvas как у видео
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    
-    // Рисуем кадр
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Получаем данные как base64
-    currentPhotoData = canvas.toDataURL('image/jpeg', 0.9);
-    
-    // Показываем превью
-    document.getElementById('previewImage').src = currentPhotoData;
-    document.getElementById('photoPreview').classList.remove('hidden');
-    
-    closeCamera();
-}
+            const savedChat = localStorage.getItem('aura_chat_backup');
+            if (savedChat) {
+                try {
+                    const chatData = JSON.parse(savedChat);
+                    const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
+                    if (hoursDiff < 24 && chatData.html) {
+                        document.getElementById('messages').innerHTML = chatData.html;
+                    }
+                } catch (e) {
+                    console.error('Error loading chat:', e);
+                }
+            }
 
-function cancelPhoto() {
-    currentPhotoData = null;
-    document.getElementById('photoPreview').classList.add('hidden');
-    document.getElementById('previewImage').src = '';
-}
-
-// ==================== ОБРАБОТКА ФАЙЛОВ ====================
-
-function handleFile(file) {
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-        addMessage('system', '❌ Пожалуйста, выберите изображение');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        currentPhotoData = e.target.result;
-        document.getElementById('previewImage').src = currentPhotoData;
-        document.getElementById('photoPreview').classList.remove('hidden');
-    };
-    reader.readAsDataURL(file);
-}
-
-// ==================== ОТПРАВКА СООБЩЕНИЙ ====================
-
-async function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const text = input.value.trim();
-    
-    if (!text) return;
-    
-    if (!spendCredit()) return;
-    
-    // Добавляем сообщение пользователя
-    addMessage('user', text);
-    input.value = '';
-    
-    // Показываем индикатор загрузки
-    addMessage('loading');
-    
-    try {
-        const response = await fetch(`${API_URL}/solve-task`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                text: text,
-                mode: 'text'
-            })
-        });
-        
-        // Убираем индикатор загрузки
-        const loadingEl = document.getElementById('loadingMessage');
-        if (loadingEl) loadingEl.remove();
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        addMessage('assistant', data.solution || data.result || 'Решение получено');
-        
-    } catch (error) {
-        console.error('Ошибка:', error);
-        
-        const loadingEl = document.getElementById('loadingMessage');
-        if (loadingEl) loadingEl.remove();
-        
-        addMessage('system', `❌ Ошибка: ${error.message}. Попробуйте еще раз.`);
-        
-        // Возвращаем кредит при ошибке
-        if (!isAdmin) {
-            credits++;
+            updateOnlineStatus();
+            const today = new Date().toDateString();
+            messageCount = parseInt(localStorage.getItem(`usage_${today}`) || '0');
             updateCredits();
-        }
-    }
-}
 
-async function sendPhoto() {
-    if (!currentPhotoData) return;
-    
-    if (!spendCredit()) return;
-    
-    // Добавляем фото в чат
-    addMessage('user', currentPhotoData, true);
-    
-    // Скрываем превью
-    document.getElementById('photoPreview').classList.add('hidden');
-    
-    // Показываем индикатор загрузки
-    addMessage('loading');
-    
-    try {
-        // Отправляем на solve-vision
-        const response = await fetch(`${API_URL}/solve-vision`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                image: currentPhotoData,
-                prompt: 'Реши эту задачу пошагово. Объясни каждый шаг подробно.'
-            })
-        });
-        
-        // Убираем индикатор загрузки
-        const loadingEl = document.getElementById('loadingMessage');
-        if (loadingEl) loadingEl.remove();
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                const bar = document.getElementById('loader-bar');
+                if (bar) bar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        const splash = document.getElementById('splash');
+                        if (splash) {
+                            splash.style.opacity = '0';
+                            setTimeout(() => splash.remove(), 500);
+                        }
+                        const app = document.getElementById('app');
+                        if (app) app.classList.add('visible');
+                    }, 500);
+                }
+            }, 200);
+
+            const msgInput = document.getElementById('msg-input');
+            if (msgInput) {
+                msgInput.addEventListener('input', function () {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+
+                msgInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+        };
+
+        function setMode(mode) {
+            const modeConfig = CONFIG.MODES[mode];
+            if (!modeConfig.free && !isPro && !isAdmin) {
+                showPaywall();
+                return;
+            }
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            const tab = document.querySelector(`[data-mode="${mode}"]`);
+            if (tab) tab.classList.add('active');
         }
-        
-        const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error);
+
+        // ОТПРАВКА ТЕКСТОМ
+        async function sendMessage() {
+            if (!navigator.onLine) {
+                showToast('Нет интернета');
+                document.getElementById('offline-screen').style.display = 'flex';
+                return;
+            }
+
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            addMessage(text, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            document.getElementById('typing').classList.add('active');
+            document.getElementById('send-btn').disabled = true;
+
+            try {
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        mode: currentMode,
+                        message: text,
+                        system: CONFIG.MODES[currentMode].system,
+                        user_pro: isPro || isAdmin
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
+
+                if (data.error) throw new Error(data.error);
+                
+                addMessage(cleanLatex(data.answer), 'ai');
+
+                // Счетчик только для обычных пользователей
+                if (!isPro && !isAdmin) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
+                }
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                addMessage('❌ Ошибка: ' + error.message, 'ai');
+            } finally {
+                document.getElementById('send-btn').disabled = false;
+            }
         }
+
+        // ОТПРАВКА ФОТО (исправленная версия без потока)
+        async function takePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            closeCamera();
+            
+            // Используем ту же логику, что и для файлов
+            await processImage(imageData);
+        }
+
+        async function openCamera() {
+            if (currentMode !== 'tutor' && !isPro && !isAdmin) {
+                showToast('Камера доступна в режиме Репетитора или PRO');
+                showPaywall();
+                return;
+            }
+            document.getElementById('camera-modal').classList.add('active');
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                document.getElementById('camera-video').srcObject = stream;
+            } catch (err) {
+                showToast('Нет доступа к камере');
+                closeCamera();
+            }
+        }
+
+        function closeCamera() {
+            document.getElementById('camera-modal').classList.remove('active');
+            if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+        }
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 5 * 1024 * 1024) { 
+                showToast('Файл слишком большой (макс 5MB)'); 
+                return; 
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('Поддерживаются только фото (JPG, PNG)');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                processImage(e.target.result);
+            };
+            
+            reader.onerror = (err) => {
+                console.error('FileReader error:', err);
+                showToast('❌ Ошибка чтения файла');
+            };
+            
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        async function processImage(imageData) {
+            if (!isPro && !isAdmin && messageCount >= CONFIG.DAILY_LIMIT) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            addMessage('[📷 Фото задачи]', 'user', imageData);
+            window.currentPhoto = imageData;
+            
+            showToast('🔍 Анализирую фото...');
+            document.getElementById('typing').classList.add('active');
+            document.getElementById('send-btn').disabled = true;
+
+            try {
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        imageBase64: imageData,
+                        mode: currentMode,
+                        user_pro: isPro || isAdmin
+                    })
+                });
+
+                if (!response.ok) {
+                    let errorText = `Ошибка сервера: ${response.status}`;
+                    try {
+                        const errData = await response.json();
+                        errorText = errData.error || errData.message || errorText;
+                    } catch(e) {}
+                    throw new Error(errorText);
+                }
+                
+                const data = await response.json();
+                document.getElementById('typing').classList.remove('active');
+                document.getElementById('send-btn').disabled = false;
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.answer) {
+                    throw new Error('Пустой ответ от сервера');
+                }
+                
+                const cleanAnswer = cleanLatex(data.answer);
+                addMessage(cleanAnswer, 'ai');
+
+                // Счетчик только для не-админов и не-про
+                if (!isPro && !isAdmin) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
+                }
+
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                document.getElementById('send-btn').disabled = false;
+                
+                let errorMessage = 'Неизвестная ошибка';
+                if (typeof error === 'string') {
+                    errorMessage = error;
+                } else if (error && error.message) {
+                    errorMessage = error.message;
+                } else if (error && error.error) {
+                    errorMessage = error.error;
+                } else {
+                    try {
+                        errorMessage = JSON.stringify(error);
+                    } catch(e) {
+                        errorMessage = 'Ошибка сети';
+                    }
+                }
+                
+                console.error('ProcessImage error:', error);
+                addMessage('❌ Ошибка: ' + errorMessage, 'ai');
+                showToast('❌ Не удалось решить');
+            }
+        }
+
+        async function initPayment() {
+            showToast('Создание платежа...');
+            try {
+                const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
+                localStorage.setItem('user_id', userId);
+
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        return_url: window.location.href.split('?')[0] + '?payment=success'
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                if (data.confirmation_url) window.location.href = data.confirmation_url;
+
+            } catch (err) {
+                showToast('Ошибка оплаты: ' + err.message);
+            }
+        }
+
+        function addMessage(content, type, image = null) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            
+            if (image && type === 'user') {
+                div.innerHTML = `<img src="${image}" alt="Фото задачи">${content}`;
+            } else {
+                div.innerHTML = content;
+            }
+            
+            const messages = document.getElementById('messages');
+            messages.appendChild(div);
+            const container = document.getElementById('chat-container');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ЕДИНСТВЕННАЯ ФУНКЦИЯ updateCredits (исправлено дублирование)
+        function updateCredits() {
+            const el = document.getElementById('credits-display');
+            if (!el) return;
+            
+            if (isAdmin) {
+                el.textContent = 'ADMIN';
+                el.style.color = '#ffd700';
+                el.style.borderColor = '#ffd700';
+                el.style.background = 'rgba(255, 215, 0, 0.2)';
+                return;
+            }
+            
+            if (isPro) {
+                el.textContent = '∞/∞';
+                el.style.color = 'var(--accent)';
+                el.style.borderColor = 'rgba(0, 212, 255, 0.3)';
+                el.style.background = 'rgba(0, 212, 255, 0.1)';
+                return;
+            }
+            
+            const remaining = CONFIG.DAILY_LIMIT - messageCount;
+            el.textContent = `${remaining}/${CONFIG.DAILY_LIMIT}`;
+            
+            if (remaining <= 3) {
+                el.style.color = '#ff1744';
+                el.style.borderColor = '#ff1744';
+                el.style.background = 'rgba(255, 23, 68, 0.1)';
+                if (remaining === 3) showToast('⚠️ Осталось 3 решения!');
+                if (remaining === 1) showToast('⚠️ Последнее решение! Далее PRO.');
+            } else if (remaining <= 5) {
+                el.style.color = '#ffa500';
+                el.style.borderColor = 'rgba(255, 165, 0, 0.5)';
+            } else {
+                el.style.color = 'var(--accent)';
+                el.style.borderColor = 'rgba(0, 212, 255, 0.3)';
+                el.style.background = 'rgba(0, 212, 255, 0.1)';
+            }
+        }
+
+        function showPaywall() { document.getElementById('paywall').classList.add('active'); }
+        function closePaywall() { document.getElementById('paywall').classList.remove('active'); }
         
-        addMessage('assistant', data.solution || data.result || data.text || 'Задача решена');
-        
-    } catch (error) {
-        console.error('Ошибка обработки фото:', error);
-        
-        const loadingEl = document.getElementById('loadingMessage');
-        if (loadingEl) loadingEl.remove();
-        
-        addMessage('system', `❌ Ошибка распознавания: ${error.message}. Попробуйте сфотографировать четче или введите текстом.`);
-        
-        // Возвращаем кредит при ошибке
-        if (!isAdmin) {
-            credits++;
+        function showToast(msg) { 
+            const t = document.getElementById('toast'); 
+            t.textContent = msg; 
+            t.classList.add('show'); 
+            setTimeout(() => t.classList.remove('show'), 3000); 
+        }
+
+        function clearChat() {
+            if(confirm('Удалить всю историю чата? Счетчик сбросится на 20/20.')) {
+                localStorage.removeItem('aura_chat_backup');
+                localStorage.removeItem(`usage_${new Date().toDateString()}`);
+                
+                document.getElementById('messages').innerHTML = `
+                    <div class="message ai" id="welcome-message">
+                        <strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+                        Бесплатно: 20 решений в день<br>
+                        PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
+                        1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
+                        2. AI решит её за 10 секунд<br>
+                        3. Получите пошаговое решение
+                    </div>
+                `;
+                
+                messageCount = 0;
+                updateCredits();
+                showToast('✅ Чат очищен');
+            }
+        }
+
+        // Проверка успешной оплаты
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            localStorage.setItem('aura_pro', 'true');
+            localStorage.setItem('aura_pro_expiry', expiryDate.toISOString());
+            isPro = true;
             updateCredits();
+            showToast('✅ PRO активирован на 30 дней!');
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
-    } finally {
-        currentPhotoData = null;
-    }
-}
-
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
-document.addEventListener('DOMContentLoaded', function() {
-    updateCredits();
-    console.log('Aura AI инициализирован. Кредитов:', credits);
-});
-
-// Обработка ошибок
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-    console.error('Ошибка:', msg, 'на строке', lineNo);
-    return false;
-};
-</script>
-
+    </script>
 </body>
 </html>
