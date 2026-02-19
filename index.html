@@ -448,69 +448,98 @@
         }
 
         // ОТПРАВКА ФОТО (через новый solve-vision)
-        async function takePhoto() {
-            const video = document.getElementById('camera-video');
-            const canvas = document.getElementById('camera-canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            closeCamera();
-            
-            if (!isPro && messageCount >= CONFIG.DAILY_LIMIT) {
-                showToast('Лимит 20 решений/день');
-                showPaywall();
-                return;
-            }
+       async function takePhoto() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    closeCamera();
+    
+    if (!isPro && messageCount >= 20) {
+        showToast('Лимит 20 решений/день');
+        showPaywall();
+        return;
+    }
 
-            // Показываем фото в чате
-            addMessage('[📷 Фото задачи]', 'user', imageData);
+    addMessage('[📷 Фото задачи]', 'user', imageData);
+    showToast('🔍 Думаю...');
+    
+    // Показываем индикатор печати
+    document.getElementById('typing').classList.add('active');
+
+    try {
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            },
+            body: JSON.stringify({ imageBase64: imageData, mode: currentMode })
+        });
+
+        if (!response.ok) throw new Error('Ошибка сети');
+
+        // Создаем сообщение для потокового вывода
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message ai';
+        msgDiv.innerHTML = '<em>Набираю ответ...</em>';
+        document.getElementById('messages').appendChild(msgDiv);
+        document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+        
+        document.getElementById('typing').classList.remove('active');
+
+        // Читаем поток
+        const reader = response.body.getReader();
+        let fullText = '';
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
             
-            showToast('🔍 Анализирую фото...');
-            document.getElementById('typing').classList.add('active');
-
-            try {
-                // Отправляем в Supabase Edge Function (OpenRouter)
-                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    },
-                    body: JSON.stringify({
-                        imageBase64: imageData,
-                        mode: currentMode,
-                        user_pro: isPro
-                    })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || 'Ошибка сервера');
+            const chunk = new TextDecoder().decode(value);
+            
+            // OpenRouter отправляет SSE формат: data: {...}
+            // Извлекаем контент из каждой строки
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                if (line.startsWith('data:')) {
+                    const jsonStr = line.replace('data:', '').trim();
+                    if (jsonStr === '[DONE]') continue;
+                    
+                    try {
+                        const parsed = JSON.parse(jsonStr);
+                        const content = parsed.choices?.[0]?.delta?.content || '';
+                        if (content) {
+                            fullText += content;
+                            // Обновляем сообщение в реальном времени
+                            msgDiv.innerHTML = cleanLatex(fullText);
+                            document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                        }
+                    } catch (e) {
+                        // Пропускаем битые JSON
+                    }
                 }
-
-                const data = await response.json();
-                document.getElementById('typing').classList.remove('active');
-
-                if (data.error) throw new Error(data.error);
-                
-                addMessage(cleanLatex(data.answer), 'ai');
-
-                if (!isPro) {
-                    messageCount++;
-                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
-                    updateCredits();
-                }
-
-            } catch (error) {
-                document.getElementById('typing').classList.remove('active');
-                console.error(error);
-                addMessage('❌ Не удалось распознать фото. Попробуйте написать текстом: ' + error.message, 'ai');
             }
         }
 
+        // Финальная очистка
+        msgDiv.innerHTML = cleanLatex(fullText);
+
+        if (!isPro) {
+            messageCount++;
+            localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+            updateCredits();
+        }
+
+    } catch (error) {
+        document.getElementById('typing').classList.remove('active');
+        addMessage('❌ Ошибка: ' + error.message, 'ai');
+    }
+}
         async function openCamera() {
             if (currentMode !== 'tutor' && !isPro) {
                 showToast('Камера доступна в режиме Репетитора или PRO');
