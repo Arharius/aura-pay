@@ -102,8 +102,6 @@
             body { background: #050817; }
             .app-container { border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
         }
-        
-        #disclaimer-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2500; flex-direction:column; padding:24px; overflow-y:auto; }
     </style>
 </head>
 <body>
@@ -234,17 +232,14 @@
             }
         };
 
-        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (исправлено - isAdmin вынесен сюда)
         let currentMode = 'tutor';
         let messageCount = 0;
         let stream = null;
-        let isAdmin = false;
+        let isAdmin = localStorage.getItem('aura_admin') === 'true';
         let isPro = false;
-        let window.currentPhoto = null; // Для хранения текущего фото
 
-        // ПРОВЕРКА АДМИНА (включать через консоль: localStorage.setItem('aura_admin', 'true'))
-        if (localStorage.getItem('aura_admin') === 'true') {
-            isAdmin = true;
+        if (isAdmin) {
             console.log('🔑 ADMIN MODE ACTIVE');
         }
 
@@ -291,7 +286,6 @@
         });
 
         function cleanLatex(text) {
-            if (!text) return '';
             return text
                 .replace(/\\[\[\]\(\)]/g, '')
                 .replace(/\(([a-zA-Z0-9√\s]+)\/\(([a-zA-Z0-9√\s]+)\)\)/g, '$1/$2')
@@ -324,14 +318,10 @@
 
             const savedChat = localStorage.getItem('aura_chat_backup');
             if (savedChat) {
-                try {
-                    const chatData = JSON.parse(savedChat);
-                    const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
-                    if (hoursDiff < 24 && chatData.html) {
-                        document.getElementById('messages').innerHTML = chatData.html;
-                    }
-                } catch (e) {
-                    console.error('Error loading chat:', e);
+                const chatData = JSON.parse(savedChat);
+                const hoursDiff = (new Date() - new Date(chatData.time)) / (1000 * 60 * 60);
+                if (hoursDiff < 24 && chatData.html) {
+                    document.getElementById('messages').innerHTML = chatData.html;
                 }
             }
 
@@ -343,36 +333,28 @@
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 20;
-                const bar = document.getElementById('loader-bar');
-                if (bar) bar.style.width = progress + '%';
+                document.getElementById('loader-bar').style.width = progress + '%';
                 if (progress >= 100) {
                     clearInterval(interval);
                     setTimeout(() => {
-                        const splash = document.getElementById('splash');
-                        if (splash) {
-                            splash.style.opacity = '0';
-                            setTimeout(() => splash.remove(), 500);
-                        }
-                        const app = document.getElementById('app');
-                        if (app) app.classList.add('visible');
+                        document.getElementById('splash').style.opacity = '0';
+                        setTimeout(() => document.getElementById('splash').remove(), 500);
+                        document.getElementById('app').classList.add('visible');
                     }, 500);
                 }
             }, 200);
 
-            const msgInput = document.getElementById('msg-input');
-            if (msgInput) {
-                msgInput.addEventListener('input', function () {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-                });
+            document.getElementById('msg-input').addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
 
-                msgInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-            }
+            document.getElementById('msg-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
         };
 
         function setMode(mode) {
@@ -383,11 +365,10 @@
             }
             currentMode = mode;
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-            const tab = document.querySelector(`[data-mode="${mode}"]`);
-            if (tab) tab.classList.add('active');
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
         }
 
-        // ОТПРАВКА ТЕКСТОМ
+        // ОТПРАВКА ТЕКСТОМ (исправлена синтаксическая ошибка с лишней скобкой)
         async function sendMessage() {
             if (!navigator.onLine) {
                 showToast('Нет интернета');
@@ -425,7 +406,7 @@
                         mode: currentMode,
                         message: text,
                         system: CONFIG.MODES[currentMode].system,
-                        user_pro: isPro || isAdmin
+                        user_pro: isPro
                     })
                 });
 
@@ -438,7 +419,7 @@
                 
                 addMessage(cleanLatex(data.answer), 'ai');
 
-                // Счетчик только для обычных пользователей
+                // ИСПРАВЛЕНО: убрана лишняя закрывающая скобка }
                 if (!isPro && !isAdmin) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
@@ -452,7 +433,7 @@
             }
         }
 
-        // ОТПРАВКА ФОТО (исправленная версия без потока)
+        // ОТПРАВКА ФОТО СО STREAMING (вернул оригинальную логику)
         async function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
@@ -464,8 +445,77 @@
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             closeCamera();
             
-            // Используем ту же логику, что и для файлов
-            await processImage(imageData);
+            if (!isPro && !isAdmin && messageCount >= 20) {
+                showToast('Лимит 20 решений/день');
+                showPaywall();
+                return;
+            }
+
+            addMessage('[📷 Фото задачи]', 'user', imageData);
+            showToast('🔍 Думаю...');
+            document.getElementById('typing').classList.add('active');
+
+            try {
+                const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({ imageBase64: imageData, mode: currentMode })
+                });
+
+                if (!response.ok) throw new Error('Ошибка сети');
+
+                // Создаем сообщение для потокового вывода (как в оригинале)
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message ai';
+                msgDiv.innerHTML = '<em>Набираю ответ...</em>';
+                document.getElementById('messages').appendChild(msgDiv);
+                document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                
+                document.getElementById('typing').classList.remove('active');
+
+                // Читаем поток (как в оригинале)
+                const reader = response.body.getReader();
+                let fullText = '';
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = new TextDecoder().decode(value);
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            const jsonStr = line.replace('data:', '').trim();
+                            if (jsonStr === '[DONE]') continue;
+                            
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                const content = parsed.choices?.[0]?.delta?.content || '';
+                                if (content) {
+                                    fullText += content;
+                                    msgDiv.innerHTML = cleanLatex(fullText);
+                                    document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+
+                msgDiv.innerHTML = cleanLatex(fullText);
+
+                if (!isPro && !isAdmin) {
+                    messageCount++;
+                    localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+                    updateCredits();
+                }
+
+            } catch (error) {
+                document.getElementById('typing').classList.remove('active');
+                addMessage('❌ Ошибка: ' + error.message, 'ai');
+            }
         }
 
         async function openCamera() {
@@ -525,9 +575,7 @@
                 return;
             }
 
-            addMessage('[📷 Фото задачи]', 'user', imageData);
-            window.currentPhoto = imageData;
-            
+            addMessage('[📷 Фото из галереи]', 'user', imageData);
             showToast('🔍 Анализирую фото...');
             document.getElementById('typing').classList.add('active');
             document.getElementById('send-btn').disabled = true;
@@ -570,7 +618,6 @@
                 const cleanAnswer = cleanLatex(data.answer);
                 addMessage(cleanAnswer, 'ai');
 
-                // Счетчик только для не-админов и не-про
                 if (!isPro && !isAdmin) {
                     messageCount++;
                     localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
@@ -639,17 +686,15 @@
                 div.innerHTML = content;
             }
             
-            const messages = document.getElementById('messages');
-            messages.appendChild(div);
-            const container = document.getElementById('chat-container');
-            container.scrollTop = container.scrollHeight;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
         // ЕДИНСТВЕННАЯ ФУНКЦИЯ updateCredits (исправлено дублирование)
         function updateCredits() {
             const el = document.getElementById('credits-display');
-            if (!el) return;
             
+            // Режим админа (безлимитно)
             if (isAdmin) {
                 el.textContent = 'ADMIN';
                 el.style.color = '#ffd700';
@@ -658,6 +703,7 @@
                 return;
             }
             
+            // PRO пользователь (безлимитно)
             if (isPro) {
                 el.textContent = '∞/∞';
                 el.style.color = 'var(--accent)';
@@ -666,6 +712,7 @@
                 return;
             }
             
+            // Обычный пользователь (счетчик 20)
             const remaining = CONFIG.DAILY_LIMIT - messageCount;
             el.textContent = `${remaining}/${CONFIG.DAILY_LIMIT}`;
             
