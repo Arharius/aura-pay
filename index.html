@@ -428,13 +428,12 @@
             }
         }
 
-        // ОТПРАВКА ФОТО (ИСПРАВЛЕННАЯ)
+        // ОТПРАВКА ФОТО (ИСПРАВЛЕННАЯ - ПОЛЕ imageBase64)
         async function takePhoto() {
             const video = document.getElementById('camera-video');
             const canvas = document.getElementById('camera-canvas');
             const ctx = canvas.getContext('2d');
             
-            // Проверяем, что видео работает
             if (!video.videoWidth || !video.videoHeight) {
                 showToast('❌ Камера не готова');
                 return;
@@ -444,18 +443,19 @@
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
             
+            // КАЧЕСТВО 0.8 - оптимально для размера
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             closeCamera();
             
-            console.log('Фото с камеры, размер:', imageData.length);
+            console.log('📷 Фото с камеры:', imageData.substring(0, 50) + '...');
             await processImage(imageData, '[📷 Фото с камеры]');
         }
 
         async function processImage(imageData, caption) {
-            // Проверка что фото реально загружено
-            if (!imageData || imageData.length < 100) {
-                console.error('Фото пустое или слишком короткое:', imageData);
-                showToast('❌ Ошибка: фото не загружено');
+            // Проверка данных
+            if (!imageData || typeof imageData !== 'string' || !imageData.startsWith('data:image')) {
+                console.error('❌ Неверные данные фото:', imageData);
+                showToast('❌ Ошибка: фото повреждено');
                 return;
             }
             
@@ -472,14 +472,19 @@
             document.getElementById('send-btn').disabled = true;
 
             try {
+                // 🔥 ВАЖНО: Отправляем как imageBase64 (как ожидает твой бэкенд)
                 const payload = {
-                    imageBase64: imageData, // ВАЖНО: используем imageBase64 как ожидает бэкенд
+                    imageBase64: imageData,
                     mode: currentMode,
                     user_pro: isPro || isAdmin
                 };
                 
-                console.log('Отправка на сервер, длина фото:', imageData.length);
-                
+                console.log('📤 Отправка на сервер...');
+                console.log('📝 Тело запроса:', JSON.stringify({
+                    ...payload,
+                    imageBase64: payload.imageBase64.substring(0, 50) + '... [truncated]'
+                }));
+
                 const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
                     method: 'POST',
                     headers: {
@@ -492,11 +497,14 @@
                 document.getElementById('typing').classList.remove('active');
                 document.getElementById('send-btn').disabled = false;
 
+                console.log('📥 Ответ сервера:', response.status);
+
                 if (!response.ok) {
-                    let errorText = `Сервер вернул ${response.status}`;
+                    let errorText = `Ошибка сервера: ${response.status}`;
                     try {
                         const errData = await response.json();
                         errorText = errData.error || errData.message || errorText;
+                        console.error('❌ Ошибка от сервера:', errData);
                     } catch(e) {
                         errorText = await response.text() || errorText;
                     }
@@ -538,7 +546,7 @@
                     }
                 }
                 
-                console.error('ProcessImage error:', error);
+                console.error('❌ ProcessImage error:', error);
                 addMessage('❌ Ошибка: ' + errorMessage, 'ai');
                 showToast('❌ Не удалось решить');
             }
@@ -582,7 +590,7 @@
             const reader = new FileReader();
             
             reader.onload = (e) => {
-                console.log('Файл загружен, размер:', e.target.result.length);
+                console.log('📁 Файл загружен:', e.target.result.substring(0, 50) + '...');
                 processImage(e.target.result, '[📷 Фото из галереи]');
             };
             
