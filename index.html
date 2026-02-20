@@ -526,35 +526,81 @@ AI предоставляет общую информацию и не учиты
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
-        function cleanLatex(text) {
-            if (!text) return '';
-            return text
-                .replace(/\\\[(\s*\n?|\n?\s*)/g, '')
-                .replace(/(\s*\n?|\n?\s*)\\\]/g, '')
-                .replace(/\\\(\s*/g, '')
-                .replace(/\s*\\\)/g, '')
-                .replace(/\\,/g, ' ')
-                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-                .replace(/\\sqrt(\s|$)/g, '√$1')
-                .replace(/\\angle/g, '∠')
-                .replace(/\\degree/g, '°')
-                .replace(/\\times|\\cdot/g, '×')
-                .replace(/\\div/g, '÷')
-                .replace(/\\pi/g, 'π')
-                .replace(/\\alpha/g, 'α')
-                .replace(/\\beta/g, 'β')
-                .replace(/\\gamma/g, 'γ')
-                .replace(/\\leq/g, '≤')
-                .replace(/\\geq/g, '≥')
-                .replace(/\\neq/g, '≠')
-                .replace(/\\approx/g, '≈')
-                .replace(/\\boxed\{([^}]+)\}/g, '<div class="answer-box">📦 Ответ: $1</div>')
-                .replace(/\\[a-zA-Z]+(\{[^}]*\})*/g, '')
-                .replace(/\^{?(\d+)}?/g, '<sup>$1</sup>')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
-        }
+       function cleanText(text) {
+    if (!text) return '';
+    
+    return text
+        // Убираем display-math режим \[...\] и inline \(...\)
+        .replace(/\\[\[\]]/g, '')
+        .replace(/\\[()]/g, '')
+        
+        // Дроби \frac{a}{b} → (a)/(b)
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
+        
+        // Тригонометрия
+        .replace(/\\sin/g, 'sin')
+        .replace(/\\cos/g, 'cos')
+        .replace(/\\tan/g, 'tg')
+        .replace(/\\cot/g, 'ctg')
+        .replace(/\\arcsin/g, 'arcsin')
+        .replace(/\\arccos/g, 'arccos')
+        .replace(/\\arctan/g, 'arctg')
+        
+        // Градусы и символы
+        .replace(/\^\{\\circ\}/g, '°')
+        .replace(/\\circ/g, '°')
+        .replace(/\\degree/g, '°')
+        .replace(/\\angle/g, '∠')
+        .replace(/\\cdot/g, '×')
+        .replace(/\\times/g, '×')
+        .replace(/\\div/g, '÷')
+        .replace(/\\pm/g, '±')
+        .replace(/\\mp/g, '∓')
+        
+        // Корни
+        .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+        .replace(/\\sqrt(\s|$)/g, '√')
+        
+        // Степени и индексы (простые)
+        .replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
+        .replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
+        .replace(/\^(\d)/g, '<sup>$1</sup>')
+        .replace(/_(\d)/g, '<sub>$1</sub>')
+        
+        // Греческие буквы
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\gamma/g, 'γ')
+        .replace(/\\delta/g, 'δ')
+        .replace(/\\pi/g, 'π')
+        .replace(/\\omega/g, 'ω')
+        .replace(/\\Omega/g, 'Ω')
+        .replace(/\\Sigma/g, 'Σ')
+        .replace(/\\sigma/g, 'σ')
+        
+        // Скобки LaTeX
+        .replace(/\\left\(/g, '(')
+        .replace(/\\right\)/g, ')')
+        .replace(/\\left\[/g, '[')
+        .replace(/\\right\]/g, ']')
+        .replace(/\\left\{/g, '{')
+        .replace(/\\right\}/g, '}')
+        
+        // Операторы
+        .replace(/\\le/g, '≤')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\ge/g, '≥')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\neq/g, '≠')
+        .replace(/\\approx/g, '≈')
+        .replace(/\\equiv/g, '≡')
+        .replace(/\\infty/g, '∞')
+        
+        // Убираем лишние пробелы и переносы
+        .replace(/\n\s*\n/g, '\n')
+        .replace(/^\s+|\s+$/g, '')
+        .trim();
+}
 
         window.onload = () => {
             if ('serviceWorker' in navigator) {
