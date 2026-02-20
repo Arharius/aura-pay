@@ -56,6 +56,7 @@
         
         .message.ai strong { color: var(--accent); }
         .message.ai .answer-box { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--pro); padding: 10px; border-radius: 8px; margin-top: 10px; display: inline-block; color: var(--pro); font-weight: bold; }
+        .message.ai .check-box { background: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; padding: 10px; border-radius: 8px; margin-top: 10px; color: #00ff00; font-size: 14px; }
         
         .input-container { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10, 14, 39, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 16px 24px 16px; z-index: 100; }
         .input-actions { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
@@ -229,7 +230,7 @@
 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
-        // ===== КОНФИГУРАЦИЯ С ПРОДВИНУТЫМИ ПРОМПТАМИ =====
+        // ===== КОНФИГУРАЦИЯ С ИСПРАВЛЕННЫМ ПРОМПТОМ ДЛЯ ТОЧНЫХ ВЫЧИСЛЕНИЙ =====
         const CONFIG = {
             SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
             SUPABASE_KEY: SUPABASE_KEY,
@@ -239,7 +240,24 @@
                 tutor: { 
                     name: 'Репетитор', 
                     free: true, 
-                    system: 'Ты эксперт по решению школьных задач (ЦДЗ, ГДЗ). Решай пошагово, объясняй простым языком. Используй только эти символы для формул: √, °, ∠, ², ³, ×, ÷. Никакого LaTeX. Ответ выдели словом "Ответ:".' 
+                    system: `Ты эксперт по математике. Решай задачи строго пошагово, избегая ошибок в вычислениях:
+
+1. **Запись условия**: Перепиши данные задачи.
+2. **Формулы**: Запиши используемые формулы в общем виде.
+3. **Подстановка**: Подставь числа в формулу буквально (не пропускай множители!).
+4. **Промежуточные вычисления**: Выполняй действия по порядку:
+   - При умножении корней: √a * √b = √(ab)
+   - При делении дробей: (a/b) / (c/d) = (a/b) * (d/c) = (ad)/(bc)
+   - При сокращении: выписывай явно, на что сокращаешь
+   - Если в числителе и знаменателе есть √3, √2 и т.д. — не сокращай их, пока не сведешь к одному корню
+5. **Проверка**: Перепроверь вычисления обратным ходом или подстановкой.
+6. **Ответ**: Четко выдели финальный ответ словом "Ответ:".
+
+ВАЖНО: 
+- Никогда не теряй множители при сокращении дробей
+- Корни из чисел >10 раскладывай на множители (√12 = √(4*3) = 2√3)
+- Используй только символы: √, °, ∠, ², ³, ×, ÷, π
+- Запрещено использовать LaTeX` 
                 },
                 
                 lawyer: { 
