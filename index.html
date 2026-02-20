@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aura AI</title>
     <script src='https://unpkg.com/tesseract.js@4/dist/tesseract.min.js'></script>
     <style>
@@ -14,6 +14,7 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         .header {
             padding: 10px 15px;
@@ -21,8 +22,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
-        .mode-selector { display: flex; gap: 8px; overflow-x: auto; }
+        .mode-selector { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
         .mode-selector::-webkit-scrollbar { display: none; }
         .mode-btn {
             background: rgba(255,255,255,0.1);
@@ -42,6 +44,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            padding-bottom: 80px;
         }
         .message {
             max-width: 80%;
@@ -49,31 +52,48 @@
             border-radius: 16px;
             line-height: 1.4;
             font-size: 14px;
+            word-wrap: break-word;
         }
-        .message.user { background: #007AFF; align-self: flex-end; }
-        .message.ai { background: rgba(255,255,255,0.15); align-self: flex-start; }
+        .message.user { background: #007AFF; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.ai { background: rgba(255,255,255,0.15); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message img { max-width: 200px; border-radius: 8px; margin-top: 5px; display: block; }
         .input-area {
-            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 15px;
             background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
             display: flex;
             gap: 8px;
             align-items: center;
+            padding-bottom: 20px;
         }
         #msg-input {
             flex: 1;
             padding: 10px 15px;
             border: none;
             border-radius: 20px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
             font-size: 15px;
+            outline: none;
         }
+        #msg-input::placeholder { color: #666; }
         .icon-btn {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             border: none;
             background: #ffd700;
+            color: #000;
             font-size: 18px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         .camera-modal {
             display: none;
@@ -85,27 +105,49 @@
         }
         .camera-modal.active { display: flex; }
         #camera-video { flex: 1; object-fit: cover; }
-        .camera-controls { padding: 20px; display: flex; justify-content: center; }
+        .camera-controls { padding: 30px; display: flex; justify-content: center; }
         .camera-btn {
-            width: 60px; height: 60px;
+            width: 70px; height: 70px;
             border-radius: 50%;
-            border: 3px solid white;
+            border: 4px solid white;
             background: transparent;
             cursor: pointer;
+            position: relative;
+        }
+        .camera-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 50px;
+            background: white;
+            border-radius: 50%;
         }
         .close-camera {
             position: absolute;
-            top: 15px; right: 15px;
+            top: 20px; right: 20px;
             background: rgba(0,0,0,0.5);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 15px;
+            padding: 10px 20px;
+            border-radius: 20px;
             cursor: pointer;
+            z-index: 10;
         }
-        .typing { display: none; padding: 5px 15px; color: rgba(255,255,255,0.7); font-size: 13px; }
+        .typing {
+            display: none;
+            padding: 5px 15px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            font-style: italic;
+        }
         .typing.active { display: block; }
-        .action-buttons { display: flex; gap: 5px; margin-top: 8px; }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
         .action-btn {
             background: #ffd700;
             color: #000;
@@ -114,6 +156,7 @@
             border-radius: 12px;
             cursor: pointer;
             font-size: 12px;
+            font-weight: bold;
         }
         .test-badge {
             background: #ff0066;
@@ -122,6 +165,8 @@
             border-radius: 10px;
             font-size: 11px;
             display: none;
+            margin-right: 5px;
+            font-weight: bold;
         }
         .test-badge.active { display: inline-block; }
     </style>
@@ -144,7 +189,7 @@
 </div>
 
 <div class="chat-container" id="messages"></div>
-<div class="typing" id="typing">Печатает...</div>
+<div class="typing" id="typing">Думает...</div>
 
 <div class="input-area">
     <button class="icon-btn" onclick="startCamera()">📷</button>
@@ -162,9 +207,10 @@
 </div>
 
 <script>
+// ⚠️ ЗАМЕНИ НА СВОЙ ANON KEY!
 const CONFIG = {
     SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
-    SUPABASE_KEY: 'твой_anon_key_здесь'
+    SUPABASE_KEY: 'eyJhbG...твой_anon_key_здесь...'
 };
 
 const TEST_PASSWORD = '20052006';
@@ -265,7 +311,7 @@ async function sendMessage() {
     }
 }
 
-// Камера и OCR (без изменений)
+// Камера и OCR
 async function startCamera() {
     if (!isPro && messageCount >= MAX_FREE) {
         addMessage('❌ Лимит исчерпан', 'ai');
