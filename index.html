@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0e27">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Aura AI - умный репетитор для решения задач по фото">
-    <link rel="manifest" href="manifest.json">
     <title>Aura AI - Решение ЦДЗ</title>
     
     <style>
@@ -59,7 +55,7 @@
         .message.ai strong { color: var(--accent); }
         .message.ai .answer-box { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--pro); padding: 10px; border-radius: 8px; margin-top: 10px; display: inline-block; color: var(--pro); font-weight: bold; }
         
-        /* Новые стили для дисклеймеров */
+        /* Стили для дисклеймеров и ошибок */
         .disclaimer-box { 
             background: rgba(255, 165, 2, 0.1); 
             border: 1px solid var(--warning); 
@@ -86,24 +82,14 @@
             margin: 8px 0;
             text-decoration: none;
         }
-        .escalation-box {
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid var(--accent);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-size: 13px;
-        }
-        .escalation-box button {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            margin-top: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
+        .error-box { 
+            background: rgba(255, 71, 87, 0.1); 
+            border: 1px solid var(--danger); 
+            padding: 12px; 
+            border-radius: 8px; 
+            color: #ff6b6b; 
+            font-size: 14px; 
+            margin-top: 8px; 
         }
         
         .input-container { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10, 14, 39, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 16px 24px 16px; z-index: 100; }
@@ -200,8 +186,8 @@
                 <div class="price">990 ₽ <span style="font-size: 14px; color: rgba(255,255,255,0.5);">30 дней</span></div>
                 <ul class="price-features">
                     <li>✅ Безлимитное решение задач</li>
-                    <li>✅ Юрист (первичный анализ)</li>
-                    <li>✅ Психолог (КПТ-техники)</li>
+                    <li>✅ AI-Юрист (первичный анализ)</li>
+                    <li>✅ AI-Психолог (КПТ-техники)</li>
                     <li>✅ Распознавание рукописи</li>
                 </ul>
                 <button class="buy-btn" onclick="initPayment()">Купить PRO</button>
@@ -271,7 +257,7 @@
 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndW1naGdvd2V4Y3V6bG5xbm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTAzNTEsImV4cCI6MjA4NjcyNjM1MX0.PWSpyTL8w4s567OeulBrmhm3x7T-nqrvfeE0Cp8Jcbw';
 
-        // ===== КОНФИГУРАЦИЯ С ЧЕСТНЫМИ ОГРАНИЧЕНИЯМИ =====
+        // ===== КОНФИГУРАЦИЯ С ИСПРАВЛЕННЫМ ПРОМПТОМ ДЛЯ ТОЧНЫХ ВЫЧИСЛЕНИЙ =====
         const CONFIG = {
             SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
             SUPABASE_KEY: SUPABASE_KEY,
@@ -283,41 +269,42 @@
                 'суицид', 'самоубийство', 'убить себя', 'покончить с собой', 
                 'не хочу жить', 'лучше бы я умер', 'передоз', 'передозировка',
                 'порезаться', 'повеситься', 'прыгнуть с', 'смерть мне',
-                'покончить', 'кончить с собой'
+                'покончить', 'кончить с собой', 'убей меня', 'умереть'
             ],
             
             MODES: {
-               tutor: { 
-    name: 'Репетитор', 
-    free: true, 
-    system: `Ты эксперт по математике. Решай задачи строго пошагово.
+                tutor: { 
+                    name: 'Репетитор', 
+                    free: true, 
+                    system: `Ты эксперт по математике. Решай задачи строго пошагово.
 
-ПРАВИЛА НАПИСАНИЯ ФОРМУЛ:
-- Пиши "sin 30°" (НЕ \\sin 30^\\circ)
-- Пиши "cos 24° × sin 2°" (НЕ \\cos24\\cdot\\sin2)
-- Пиши "(sin 26° - sin 22°) / 2" (НЕ \\frac{\\sin 26^{\\circ} - \\sin 22^{\\circ}}{2})
-- Пиши "√3 / 2" (НЕ \\frac{\\sqrt{3}}{2})
-- Пиши "2√3" (НЕ 2\\sqrt{3})
+ПРАВИЛА НАПИСАНИЯ ФОРМУЛ (очень важно):
+- Пиши "sin 30°" вместо "\\sin 30^\\circ" 
+- Пиши "cos 24° × sin 2°" вместо "\\cos24\\cdot\\sin2"
+- Пиши "(sin 26° - sin 22°) / 2" вместо "\\frac{\\sin 26^{\\circ} - \\sin 22^{\\circ}}{2}"
+- Пиши "√3 / 2" вместо "\\frac{\\sqrt{3}}{2}"
+- Пиши "2√3" вместо "2\\sqrt{3}"
+- Пиши "x²" вместо "x^2" или "x^{2}"
 
 ЗАПРЕЩЕНО использовать: \\sin, \\cos, \\frac, \\sqrt, \\circ, \\cdot, \\times, \\alpha, \\beta и другие команды LaTeX.
 
 ИСПОЛЬЗУЙ ТОЛЬКО: sin, cos, tg, ctg, arcsin, arccos, √, °, ², ³, ×, ÷, /, π, ∠, (, ), обычные числа и буквы.
 
 ШАГИ РЕШЕНИЯ:
-1. Запиши условие
-2. Запиши формулу простыми символами
-3. Подставь числа
-4. Вычисли (без сокращений "в уме" — показывай каждый шаг)
-5. Проверь
+1. Запиши условие простыми словами
+2. Запиши формулу простыми символами (sin, cos, √, °)
+3. Подставь числа буквально
+4. Вычисли пошагово (без сокращений "в уме" — показывай каждый шаг)
+5. Проверь обратным вычислением
 6. Ответ: [число]
 
 Пример правильного оформления:
-"Используем формулу синуса разности: sin(α - β) = sin α cos β - cos α sin β"
-(НЕ \\sin(\\alpha - \\beta) = ...)
+"По теореме синусов: a / sin A = b / sin B"
+"Вычисляем: sin 30° = 0.5"
+"Получаем: x = (2 × √3) / 2 = √3"
 
 Если видишь, что начинаешь писать \\ — остановись и перепиши простыми буквами.`,
-    welcome: `...`
-}, `<strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
+                    welcome: `<strong>📸 Решайте ЦДЗ и ГДЗ по фото!</strong><br><br>
                         Бесплатно: 10 решений в день<br>
                         PRO: 990₽ / 30 дней + Юрист + Психолог<br><br>
                         1. Нажмите <b>Камера</b> — сфотографируйте задачу<br>
@@ -398,8 +385,7 @@ AI предоставляет общую информацию и не учиты
                         • Паническими атаками (тут-и-сейчас техники)<br><br>
                         
                         <div class="disclaimer-box">
-                            ⚠️ <strong>Важно:</strong> Я AI-ассистент, не заменяю терапевта. 
-                            При серьезных расстройствах, мыслях о самоповреждении или 
+                            ⚠️ <strong>Важно:</strong> Я AI-ассистент. При мыслях о самоповреждении или 
                             суициде немедленно обратитесь к специалисту:<br>
                             <strong>Телефон доверия: 8-800-2000-122</strong>
                         </div>`
@@ -410,13 +396,6 @@ AI предоставляет общую информацию и не учиты
         let currentMode = 'tutor';
         let messageCount = 0;
         let stream = null;
-        
-        // Хранилище чатов для каждого режима
-        let chats = {
-            tutor: [],
-            lawyer: [],
-            psych: []
-        };
 
         // ===== ТЕСТОВЫЙ РЕЖИМ =====
         let testMode = localStorage.getItem('aura_test_mode') === 'true';
@@ -441,6 +420,14 @@ AI предоставляет общую информацию и не учиты
             localStorage.setItem('aura_test_mode', testMode);
             updateTestMode();
             showToast(testMode ? '🧪 Тестовый режим ВКЛ' : '🔒 Тестовый режим ВЫКЛ');
+        }
+
+        // ===== КОНТЕКСТ ДЛЯ "ПОДРОБНЕЕ" =====
+        let lastTask = { question: null, image: null, shortAnswer: null };
+
+        function isExplanationRequest(text) {
+            const patterns = [/подробнее/i, /объясни/i, /не понял/i, /непонятно/i, /почему/i, /откуда/i, /как получилось/i, /расскажи/i, /поясни/i, /детальнее/i, /разжуй/i, /поподробнее/i, /почему именно/i, /откуда взялось/i, /как это/i];
+            return patterns.some(p => p.test(text)) && text.length < 50;
         }
 
         // ===== ПРОВЕРКА КРИЗИСНЫХ СИТУАЦИЙ =====
@@ -472,14 +459,6 @@ AI предоставляет общую информацию и не учиты
             `;
             addMessage(crisisHtml, 'ai');
             saveCurrentChat();
-        }
-
-        // ===== КОНТЕКСТ ДЛЯ "ПОДРОБНЕЕ" =====
-        let lastTask = { question: null, image: null, shortAnswer: null };
-
-        function isExplanationRequest(text) {
-            const patterns = [/подробнее/i, /объясни/i, /не понял/i, /непонятно/i, /почему/i, /откуда/i, /как получилось/i, /расскажи/i, /поясни/i, /детальнее/i, /разжуй/i, /поподробнее/i, /почему именно/i, /откуда взялось/i, /как это/i];
-            return patterns.some(p => p.test(text)) && text.length < 50;
         }
 
         function checkProStatus() {
@@ -516,6 +495,87 @@ AI предоставляет общую информацию и не учиты
             saveCurrentChat();
         });
 
+        // ===== ОЧИСТКА LaTeX =====
+        function cleanText(text) {
+            if (!text) return '';
+            
+            return text
+                // Убираем display-math режим \[...\] и inline \(...\)
+                .replace(/\\[\[\]]/g, '')
+                .replace(/\\[()]/g, '')
+                
+                // Дроби \frac{a}{b} → (a)/(b)
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
+                
+                // Тригонометрия
+                .replace(/\\sin/g, 'sin')
+                .replace(/\\cos/g, 'cos')
+                .replace(/\\tan/g, 'tg')
+                .replace(/\\cot/g, 'ctg')
+                .replace(/\\arcsin/g, 'arcsin')
+                .replace(/\\arccos/g, 'arccos')
+                .replace(/\\arctan/g, 'arctg')
+                
+                // Градусы и символы
+                .replace(/\^\{\\circ\}/g, '°')
+                .replace(/\\circ/g, '°')
+                .replace(/\\degree/g, '°')
+                .replace(/\\angle/g, '∠')
+                .replace(/\\cdot/g, '×')
+                .replace(/\\times/g, '×')
+                .replace(/\\div/g, '÷')
+                .replace(/\\pm/g, '±')
+                .replace(/\\mp/g, '∓')
+                
+                // Корни
+                .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+                .replace(/\\sqrt(\s|$)/g, '√')
+                
+                // Степени и индексы (простые)
+                .replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
+                .replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
+                .replace(/\^(\d)/g, '<sup>$1</sup>')
+                .replace(/_(\d)/g, '<sub>$1</sub>')
+                
+                // Греческие буквы
+                .replace(/\\alpha/g, 'α')
+                .replace(/\\beta/g, 'β')
+                .replace(/\\gamma/g, 'γ')
+                .replace(/\\delta/g, 'δ')
+                .replace(/\\pi/g, 'π')
+                .replace(/\\omega/g, 'ω')
+                .replace(/\\Omega/g, 'Ω')
+                .replace(/\\Sigma/g, 'Σ')
+                .replace(/\\sigma/g, 'σ')
+                
+                // Скобки LaTeX
+                .replace(/\\left\(/g, '(')
+                .replace(/\\right\)/g, ')')
+                .replace(/\\left\[/g, '[')
+                .replace(/\\right\]/g, ']')
+                .replace(/\\left\{/g, '{')
+                .replace(/\\right\}/g, '}')
+                
+                // Операторы
+                .replace(/\\le/g, '≤')
+                .replace(/\\leq/g, '≤')
+                .replace(/\\ge/g, '≥')
+                .replace(/\\geq/g, '≥')
+                .replace(/\\neq/g, '≠')
+                .replace(/\\approx/g, '≈')
+                .replace(/\\equiv/g, '≡')
+                .replace(/\\infty/g, '∞')
+                
+                // Markdown
+                .replace(/\*\*/g, '<b>').replace(/\*\*/g, '</b>')
+                .replace(/\*/g, '')
+                
+                // Убираем лишние пробелы и переносы
+                .replace(/\n\s*\n/g, '\n')
+                .replace(/^\s+|\s+$/g, '')
+                .trim();
+        }
+
         function saveCurrentChat() {
             const messagesHtml = document.getElementById('messages').innerHTML;
             localStorage.setItem(`aura_chat_${currentMode}`, messagesHtml);
@@ -535,81 +595,6 @@ AI предоставляет общую информацию и не учиты
             
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
-function cleanText(text) {
-    if (!text) return '';
-    
-    return text
-        // Убираем display-math режим \[...\] и inline \(...\)
-        .replace(/\\[\[\]]/g, '')
-        .replace(/\\[()]/g, '')
-        
-        // Дроби \frac{a}{b} → (a)/(b)
-        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
-        
-        // Тригонометрия
-        .replace(/\\sin/g, 'sin')
-        .replace(/\\cos/g, 'cos')
-        .replace(/\\tan/g, 'tg')
-        .replace(/\\cot/g, 'ctg')
-        .replace(/\\arcsin/g, 'arcsin')
-        .replace(/\\arccos/g, 'arccos')
-        .replace(/\\arctan/g, 'arctg')
-        
-        // Градусы и символы
-        .replace(/\^\{\\circ\}/g, '°')
-        .replace(/\\circ/g, '°')
-        .replace(/\\degree/g, '°')
-        .replace(/\\angle/g, '∠')
-        .replace(/\\cdot/g, '×')
-        .replace(/\\times/g, '×')
-        .replace(/\\div/g, '÷')
-        .replace(/\\pm/g, '±')
-        .replace(/\\mp/g, '∓')
-        
-        // Корни
-        .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-        .replace(/\\sqrt(\s|$)/g, '√')
-        
-        // Степени и индексы (простые)
-        .replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
-        .replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
-        .replace(/\^(\d)/g, '<sup>$1</sup>')
-        .replace(/_(\d)/g, '<sub>$1</sub>')
-        
-        // Греческие буквы
-        .replace(/\\alpha/g, 'α')
-        .replace(/\\beta/g, 'β')
-        .replace(/\\gamma/g, 'γ')
-        .replace(/\\delta/g, 'δ')
-        .replace(/\\pi/g, 'π')
-        .replace(/\\omega/g, 'ω')
-        .replace(/\\Omega/g, 'Ω')
-        .replace(/\\Sigma/g, 'Σ')
-        .replace(/\\sigma/g, 'σ')
-        
-        // Скобки LaTeX
-        .replace(/\\left\(/g, '(')
-        .replace(/\\right\)/g, ')')
-        .replace(/\\left\[/g, '[')
-        .replace(/\\right\]/g, ']')
-        .replace(/\\left\{/g, '{')
-        .replace(/\\right\}/g, '}')
-        
-        // Операторы
-        .replace(/\\le/g, '≤')
-        .replace(/\\leq/g, '≤')
-        .replace(/\\ge/g, '≥')
-        .replace(/\\geq/g, '≥')
-        .replace(/\\neq/g, '≠')
-        .replace(/\\approx/g, '≈')
-        .replace(/\\equiv/g, '≡')
-        .replace(/\\infty/g, '∞')
-        
-        // Убираем лишние пробелы и переносы
-        .replace(/\n\s*\n/g, '\n')
-        .replace(/^\s+|\s+$/g, '')
-        .trim();
-}
 
         window.onload = () => {
             if ('serviceWorker' in navigator) {
@@ -734,7 +719,7 @@ function cleanText(text) {
 4. Покажи, какие ошибки могут возникнуть
 5. Проверь ответ другим способом
 
-Пиши простым языком, как будто объясняешь другу.`;
+Пиши простым языком, как будто объясняешь другу. Используй только простые символы: sin, cos, √, °, ×, ÷.`;
                 
                 addMessage(text, 'user');
                 input.value = '';
@@ -759,10 +744,10 @@ function cleanText(text) {
                     const data = await response.json();
                     document.getElementById('typing').classList.remove('active');
                     if (data.error) throw new Error(data.error);
-                    addMessage(cleanLatex(data.answer), 'ai');
+                    addMessage(cleanText(data.answer), 'ai');
                 } catch (error) {
                     document.getElementById('typing').classList.remove('active');
-                    addMessage('❌ Ошибка: ' + (error.message || 'Не удалось получить объяснение'), 'ai');
+                    addMessage('<div class="error-box">❌ Ошибка: ' + (error.message || 'Не удалось получить объяснение') + '</div>', 'ai');
                 }
                 return;
             }
@@ -797,7 +782,12 @@ function cleanText(text) {
                     })
                 });
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    if (response.status === 0 || response.status === 503) {
+                        throw new Error('Сервер временно недоступен (возможно, "засыпание" на бесплатном тарифе). Подождите 10 секунд и повторите.');
+                    }
+                    throw new Error(`Ошибка сервера: ${response.status}`);
+                }
 
                 const data = await response.json();
                 document.getElementById('typing').classList.remove('active');
@@ -805,13 +795,9 @@ function cleanText(text) {
                 
                 lastTask = { question: text, image: null, shortAnswer: data.answer.substring(0, 500) };
                 
-                // Добавляем эскалацию для юриста при сложных кейсах
-                let answer = cleanLatex(data.answer);
-                if (currentMode === 'lawyer' && isComplexLegalCase(text)) {
-                    answer += createEscalationBox('lawyer');
-                }
-                
-                addMessage(answer, 'ai');
+                // Очищаем ответ от LaTeX на всякий случай
+                const cleanAnswer = cleanText(data.answer);
+                addMessage(cleanAnswer, 'ai');
 
                 if (currentMode === 'tutor' && !isPro && !testMode) {
                     messageCount++;
@@ -820,36 +806,10 @@ function cleanText(text) {
                 }
             } catch (error) {
                 document.getElementById('typing').classList.remove('active');
-                addMessage('❌ Ошибка: ' + (error.message || String(error)), 'ai');
+                addMessage('<div class="error-box">❌ ' + (error.message || 'Ошибка соединения. Проверьте интернет или подождите 10 сек.') + '</div>', 'ai');
             } finally {
                 document.getElementById('send-btn').disabled = false;
             }
-        }
-
-        function isComplexLegalCase(text) {
-            const complexKeywords = [
-                'уголовное', 'банкротство', 'ДТП', 'смерть', 'убийство', 
-                'развод с разделом', 'миллион', 'бизнес', 'ooo', 'ооо', 
-                'ип', 'суд', 'исковое', 'адвокат', 'юрист', 'тюрьма', 'срок'
-            ];
-            const lowerText = text.toLowerCase();
-            return complexKeywords.some(k => lowerText.includes(k));
-        }
-
-        function createEscalationBox(type) {
-            if (type === 'lawyer') {
-                return `
-                    <div class="escalation-box">
-                        ⚖️ <strong>Сложный случай?</strong><br>
-                        AI помогает с типовыми ситуациями. Для индивидуальной консультации, 
-                        особенно при судебных разбирательствах, рекомендуем обратиться к профессиональному юристу.<br>
-                        <button onclick="showToast('Функция поиска специалиста в разработке')">
-                            Найти юриста рядом
-                        </button>
-                    </div>
-                `;
-            }
-            return '';
         }
 
         async function takePhoto() {
@@ -898,7 +858,7 @@ function cleanText(text) {
                 });
 
                 document.getElementById('typing').classList.remove('active');
-                document.getElementById('send-btn').disabled = false;
+                document.getElementById('send-btn').disabled = false);
 
                 if (!response.ok) {
                     let errorText = `Ошибка сервера: ${response.status}`;
@@ -914,7 +874,7 @@ function cleanText(text) {
                 if (!data.answer) throw new Error('Пустой ответ от сервера');
                 
                 lastTask = { question: caption, image: imageData, shortAnswer: data.answer.substring(0, 500) };
-                addMessage(cleanLatex(data.answer), 'ai');
+                addMessage(cleanText(data.answer), 'ai');
 
                 if (currentMode === 'tutor' && !isPro && !testMode) {
                     messageCount++;
@@ -924,7 +884,7 @@ function cleanText(text) {
             } catch (error) {
                 document.getElementById('typing').classList.remove('active');
                 document.getElementById('send-btn').disabled = false;
-                addMessage('❌ Ошибка: ' + (error.message || 'Неизвестная ошибка'), 'ai');
+                addMessage('<div class="error-box">❌ Ошибка: ' + (error.message || 'Не удалось обработать фото. Попробуйте еще раз.') + '</div>', 'ai');
                 showToast('❌ Не удалось обработать');
             }
         }
