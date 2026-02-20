@@ -16,58 +16,63 @@
             flex-direction: column;
         }
         .header {
-            padding: 15px;
+            padding: 10px 15px;
             background: rgba(0,0,0,0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .mode-selector { display: flex; gap: 10px; overflow-x: auto; }
+        .mode-selector { display: flex; gap: 8px; overflow-x: auto; }
+        .mode-selector::-webkit-scrollbar { display: none; }
         .mode-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 15px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
+            white-space: nowrap;
         }
-        .mode-btn.active { background: #ffd700; color: #000; }
+        .mode-btn.active { background: #ffd700; color: #000; font-weight: bold; }
         .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
         .message {
-            max-width: 85%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.5;
-            font-size: 15px;
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            line-height: 1.4;
+            font-size: 14px;
         }
         .message.user { background: #007AFF; align-self: flex-end; }
         .message.ai { background: rgba(255,255,255,0.15); align-self: flex-start; }
         .input-area {
-            padding: 15px;
+            padding: 10px;
             background: rgba(0,0,0,0.2);
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            align-items: center;
         }
         #msg-input {
             flex: 1;
-            padding: 12px 16px;
+            padding: 10px 15px;
             border: none;
-            border-radius: 25px;
-            font-size: 16px;
+            border-radius: 20px;
+            font-size: 15px;
         }
         .icon-btn {
-            width: 44px; height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             border: none;
             background: #ffd700;
+            font-size: 18px;
             cursor: pointer;
         }
         .camera-modal {
@@ -82,40 +87,40 @@
         #camera-video { flex: 1; object-fit: cover; }
         .camera-controls { padding: 20px; display: flex; justify-content: center; }
         .camera-btn {
-            width: 70px; height: 70px;
+            width: 60px; height: 60px;
             border-radius: 50%;
-            border: 4px solid white;
+            border: 3px solid white;
             background: transparent;
             cursor: pointer;
         }
         .close-camera {
             position: absolute;
-            top: 20px; right: 20px;
+            top: 15px; right: 15px;
             background: rgba(0,0,0,0.5);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 8px 15px;
+            border-radius: 15px;
             cursor: pointer;
         }
-        .typing { display: none; padding: 10px 20px; color: rgba(255,255,255,0.7); }
+        .typing { display: none; padding: 5px 15px; color: rgba(255,255,255,0.7); font-size: 13px; }
         .typing.active { display: block; }
-        .action-buttons { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .action-buttons { display: flex; gap: 5px; margin-top: 8px; }
         .action-btn {
             background: #ffd700;
             color: #000;
             border: none;
-            padding: 8px 16px;
-            border-radius: 15px;
+            padding: 5px 10px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
         }
         .test-badge {
             background: #ff0066;
             color: white;
-            padding: 5px 15px;
-            border-radius: 15px;
-            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
             display: none;
         }
         .test-badge.active { display: inline-block; }
@@ -124,31 +129,31 @@
 <body>
 
 <div class="header">
-    <div style="display:flex;align-items:center;gap:10px;">
-        <b>Aura AI</b>
+    <div style="display:flex;align-items:center;gap:8px;">
         <span class="test-badge" id="test-badge">🧪 ТЕСТ</span>
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('tutor')">🎓 Репетитор</button>
+            <button class="mode-btn" onclick="setMode('lawyer')">⚖️ Юрист</button>
+            <button class="mode-btn" onclick="setMode('psych')">🧠 Психолог</button>
+        </div>
     </div>
-    <div class="mode-selector">
-        <button class="mode-btn active" onclick="setMode('tutor')">🎓 Репетитор</button>
-        <button class="mode-btn" onclick="setMode('lawyer')">⚖️ Юрист</button>
-        <button class="mode-btn" onclick="setMode('psych')">🧠 Психолог</button>
-    </div>
-    <div style="font-size: 13px;">
+    <div style="font-size: 12px;">
         <span id="credits">20</span> ⭐
+        <button onclick="clearChat()" style="background:none;border:none;color:white;margin-left:10px;cursor:pointer;">🗑️</button>
     </div>
 </div>
 
 <div class="chat-container" id="messages"></div>
-<div class="typing" id="typing">Думаю...</div>
+<div class="typing" id="typing">Печатает...</div>
 
 <div class="input-area">
     <button class="icon-btn" onclick="startCamera()">📷</button>
-    <input type="text" id="msg-input" placeholder="Введите /test 20052006 или текст..." onkeypress="if(event.key==='Enter')sendMessage()">
+    <input type="text" id="msg-input" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter')sendMessage()">
     <button class="icon-btn" onclick="sendMessage()">➤</button>
 </div>
 
 <div class="camera-modal" id="camera-modal">
-    <button class="close-camera" onclick="closeCamera()">✕</button>
+    <button class="close-camera" onclick="closeCamera()">✕ Закрыть</button>
     <video id="camera-video" autoplay playsinline></video>
     <canvas id="camera-canvas" style="display:none;"></canvas>
     <div class="camera-controls">
@@ -157,10 +162,9 @@
 </div>
 
 <script>
-// ===== КОНФИГУРАЦИЯ (ПРОВЕРЬ ЭТО!) =====
 const CONFIG = {
     SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
-    SUPABASE_KEY: 'sb_publishable_O7VDJMTOc45bFS8l6K-ilg_pkQ2PCax' // <-- ЗАМЕНИ ЭТО!
+    SUPABASE_KEY: 'твой_anon_key_здесь'
 };
 
 const TEST_PASSWORD = '20052006';
@@ -169,29 +173,26 @@ let messageCount = 0;
 let isPro = false;
 const MAX_FREE = 20;
 
-// Проверка при загрузке
 window.onload = () => {
-    console.log('✅ Страница загружена');
-    console.log('Supabase URL:', CONFIG.SUPABASE_URL);
-    
     if (localStorage.getItem('aura_test_mode') === 'true') {
         isPro = true;
         document.getElementById('test-badge').classList.add('active');
-        console.log('🔓 Тестовый режим активен');
     }
-    
     const today = new Date().toDateString();
     messageCount = parseInt(localStorage.getItem(`usage_${today}`)) || 0;
     updateCredits();
-    
-    addMessage('👋 Привет! Напиши <b>/test 20052006</b> для активации PRO.<br>Или сфотографируй задачу 📷', 'ai');
+    addMessage('👋 Привет! Я помогу с задачей.<br><br>🧪 Для тестового режима введи: /test 20052006', 'ai');
 };
 
 function setMode(mode) {
     currentMode = mode;
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    console.log('Режим:', mode);
+    document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', 
+            (mode === 'tutor' && i === 0) ||
+            (mode === 'lawyer' && i === 1) ||
+            (mode === 'psych' && i === 2)
+        );
+    });
 }
 
 function addMessage(text, type) {
@@ -199,27 +200,28 @@ function addMessage(text, type) {
     div.className = `message ${type}`;
     div.innerHTML = text;
     document.getElementById('messages').appendChild(div);
-    window.scrollTo(0, document.body.scrollHeight);
+    document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
 }
 
 function updateCredits() {
     document.getElementById('credits').textContent = isPro ? '∞' : Math.max(0, MAX_FREE - messageCount);
 }
 
-// ===== ТЕСТОВЫЙ РЕЖИМ =====
+function clearChat() {
+    document.getElementById('messages').innerHTML = '';
+    addMessage('Чат очищен.', 'ai');
+}
+
 async function sendMessage() {
     const input = document.getElementById('msg-input');
     const text = input.value.trim();
     
-    console.log('Отправка:', text);
-    
-    // Проверка пароля
+    // Тестовый режим
     if (text === '/test ' + TEST_PASSWORD) {
-        console.log('Введен пароль тестового режима');
         localStorage.setItem('aura_test_mode', 'true');
         isPro = true;
         document.getElementById('test-badge').classList.add('active');
-        addMessage('🧪 <b>Тестовый режим активирован!</b><br>Теперь у тебя ∞ решений.', 'ai');
+        addMessage('🧪 Тестовый режим активирован! Лимиты сняты.', 'ai');
         input.value = '';
         updateCredits();
         return;
@@ -227,7 +229,7 @@ async function sendMessage() {
     
     if (!text) return;
     if (!isPro && messageCount >= MAX_FREE) {
-        addMessage('❌ Лимит 20 решений. Введи /test 20052006 для снятия лимита.', 'ai');
+        addMessage('❌ Лимит исчерпан. Введи /test 20052006', 'ai');
         return;
     }
 
@@ -235,69 +237,48 @@ async function sendMessage() {
     input.value = '';
     document.getElementById('typing').classList.add('active');
 
-    // Отправка в API
     try {
-        const url = `${CONFIG.SUPABASE_URL}/functions/v1/solve-task`;
-        console.log('Отправка на:', url);
-        
-        const response = await fetch(url, {
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-task`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}`
             },
-            body: JSON.stringify({
-                mode: currentMode,
-                message: text
-            })
+            body: JSON.stringify({ mode: currentMode, message: text })
         });
 
-        console.log('Статус ответа:', response.status);
+        document.getElementById('typing').classList.remove('active');
         
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error('Ошибка ответа:', errText);
-            throw new Error(`Ошибка сервера: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Ошибка ' + response.status);
         
         const data = await response.json();
-        console.log('Получен ответ:', data);
-        
-        document.getElementById('typing').classList.remove('active');
-        addMessage(data.answer || 'Нет ответа', 'ai');
+        addMessage(data.answer, 'ai');
         
         if (!isPro) {
             messageCount++;
             localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
             updateCredits();
         }
-
     } catch (err) {
-        console.error('Ошибка:', err);
         document.getElementById('typing').classList.remove('active');
-        addMessage('❌ Ошибка: ' + err.message + '<br>Проверь консоль (F12)', 'ai');
+        addMessage('❌ Ошибка: ' + err.message, 'ai');
     }
 }
 
-// ===== КАМЕРА =====
+// Камера и OCR (без изменений)
 async function startCamera() {
-    console.log('Запуск камеры...');
     if (!isPro && messageCount >= MAX_FREE) {
-        addMessage('❌ Лимит исчерпан. Введи /test 20052006', 'ai');
+        addMessage('❌ Лимит исчерпан', 'ai');
         return;
     }
-    
     const modal = document.getElementById('camera-modal');
     const video = document.getElementById('camera-video');
-    
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         video.srcObject = stream;
         modal.classList.add('active');
-        console.log('Камера запущена');
     } catch (err) {
-        console.error('Ошибка камеры:', err);
-        addMessage('❌ Нет доступа к камере: ' + err.message, 'ai');
+        addMessage('❌ Нет доступа к камере', 'ai');
     }
 }
 
@@ -311,7 +292,6 @@ function closeCamera() {
 }
 
 async function takePhoto() {
-    console.log('Фото...');
     const video = document.getElementById('camera-video');
     const canvas = document.getElementById('camera-canvas');
     const ctx = canvas.getContext('2d');
@@ -327,24 +307,19 @@ async function takePhoto() {
     document.getElementById('typing').classList.add('active');
 
     try {
-        console.log('Начинаю OCR...');
         const result = await Tesseract.recognize(imageData, 'rus+eng');
         const text = result.data.text.trim();
-        console.log('OCR результат:', text);
-        
         document.getElementById('typing').classList.remove('active');
         
         if (!text || text.length < 3) {
-            addMessage('⚠️ Текст не распознан. Попробуй ввести вручную.', 'ai');
+            addMessage('⚠️ Текст не распознан', 'ai');
             return;
         }
 
-        addMessage(`📝 Распознано: "${text.substring(0, 100)}..."<br><button class="action-btn" onclick="solveText('${text.replace(/'/g, "\\'")}')">Решить</button> <button class="action-btn" onclick="document.getElementById('msg-input').value='${text.replace(/'/g, "\\'")}'">Исправить</button>`, 'ai');
-
+        addMessage(`📝 "${text.substring(0, 80)}..."<br><div class="action-buttons"><button class="action-btn" onclick="solveText('${text.replace(/'/g, "\\'")}')">Решить</button><button class="action-btn" onclick="document.getElementById('msg-input').value='${text.replace(/'/g, "\\'")}'">Исправить</button></div>`, 'ai');
     } catch (err) {
-        console.error('Ошибка OCR:', err);
         document.getElementById('typing').classList.remove('active');
-        addMessage('❌ Ошибка OCR: ' + err.message, 'ai');
+        addMessage('❌ Ошибка OCR', 'ai');
     }
 }
 
