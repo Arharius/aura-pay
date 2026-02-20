@@ -22,11 +22,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        .mode-selector {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-        }
+        .mode-selector { display: flex; gap: 10px; overflow-x: auto; }
         .mode-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
@@ -37,11 +33,7 @@
             white-space: nowrap;
             font-size: 14px;
         }
-        .mode-btn.active {
-            background: #ffd700;
-            color: #000;
-            font-weight: bold;
-        }
+        .mode-btn.active { background: #ffd700; color: #000; font-weight: bold; }
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -57,21 +49,9 @@
             line-height: 1.5;
             font-size: 15px;
         }
-        .message.user {
-            background: #007AFF;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-        .message.ai {
-            background: rgba(255,255,255,0.15);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-        .message img {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 5px;
-        }
+        .message.user { background: #007AFF; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.ai { background: rgba(255,255,255,0.15); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
         .input-area {
             padding: 15px;
             background: rgba(0,0,0,0.2);
@@ -112,53 +92,24 @@
             flex-direction: column;
         }
         .camera-modal.active { display: flex; }
-        #camera-video {
-            flex: 1;
-            object-fit: cover;
-        }
-        .camera-controls {
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-        }
+        #camera-video { flex: 1; object-fit: cover; }
+        .camera-controls { padding: 20px; display: flex; justify-content: center; gap: 20px; }
         .camera-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 4px solid white;
-            background: transparent;
-            cursor: pointer;
+            width: 70px; height: 70px; border-radius: 50%;
+            border: 4px solid white; background: transparent; cursor: pointer;
         }
-        .camera-btn:active { background: rgba(255,255,255,0.3); }
         .close-camera {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(0,0,0,0.5); color: white;
+            border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer;
         }
         .typing {
-            display: none;
-            color: rgba(255,255,255,0.6);
-            font-style: italic;
-            padding: 0 20px;
+            display: none; color: rgba(255,255,255,0.6);
+            font-style: italic; padding: 0 20px;
         }
         .typing.active { display: block; }
-        .credits {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
+        .credits { font-size: 12px; opacity: 0.8; }
+        .action-buttons { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
         .action-btn {
             background: rgba(255,215,0,0.2);
             border: 1px solid #ffd700;
@@ -168,22 +119,12 @@
             cursor: pointer;
             font-size: 13px;
         }
-        .action-btn:hover { background: rgba(255,215,0,0.3); }
-        .vpn-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-        }
         .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
+            position: fixed; bottom: 100px; left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.8);
-            padding: 12px 24px;
-            border-radius: 25px;
-            display: none;
-            z-index: 100;
+            padding: 12px 24px; border-radius: 25px;
+            display: none; z-index: 100;
         }
         .toast.show { display: block; }
     </style>
@@ -203,13 +144,12 @@
 </div>
 
 <div class="chat-container" id="messages"></div>
-
-<div class="typing" id="typing">Печатает...</div>
+<div class="typing" id="typing">Распознаю текст...</div>
 
 <div class="input-area">
-    <button class="icon-btn" onclick="startCamera()" title="Камера">📷</button>
+    <button class="icon-btn" onclick="startCamera()">📷</button>
     <input type="text" id="msg-input" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter')sendMessage()">
-    <button class="icon-btn" onclick="sendMessage()" title="Отправить">➤</button>
+    <button class="icon-btn" onclick="sendMessage()">➤</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -224,63 +164,36 @@
 </div>
 
 <script>
-// ===== КОНФИГУРАЦИЯ (ЗАМЕНИ НА СВОИ ДАННЫЕ) =====
+// ===== КОНФИГУРАЦИЯ (ЗАМЕНИ НА СВОИ) =====
 const CONFIG = {
     SUPABASE_URL: 'https://tgumghgowexcuzlnqnoa.supabase.co',
-    SUPABASE_KEY: 'твой_supabase_anon_key',
-    MODES: {
-        tutor: { 
-            name: 'Репетитор', 
-            system: 'Ты репетитор. Решай задачи пошагово. Макс 5 шагов. Без LaTeX.' 
-        },
-        lawyer: { 
-            name: 'Юрист', 
-            system: 'Ты юрист. Давай четкие консультации по законам РФ.' 
-        },
-        psych: { 
-            name: 'Психолог', 
-            system: 'Ты психолог. Давай эмпатичную поддержку.' 
-        }
-    }
+    SUPABASE_KEY: 'твой_supabase_anon_key'
 };
 
 // ===== СОСТОЯНИЕ =====
 let currentMode = 'tutor';
 let messageCount = 0;
-let isPro = false;
-let lastPhotoBase64 = null;
 const MAX_FREE = 20;
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 window.onload = () => {
     const today = new Date().toDateString();
-    const saved = localStorage.getItem(`usage_${today}`);
-    messageCount = saved ? parseInt(saved) : 0;
+    messageCount = parseInt(localStorage.getItem(`usage_${today}`)) || 0;
     updateCredits();
-    
-    const savedPhoto = localStorage.getItem('last_photo');
-    if (savedPhoto) lastPhotoBase64 = savedPhoto;
-    
-    addMessage('👋 Привет! Я помогу решить задачу.\n\n📷 Сфотографируй задачу или напиши текст.\n🌐 Если OCR не справится — попробуем GPT-4 (нужен VPN).', 'ai');
+    addMessage('👋 Привет! Я помогу решить задачу.\n\n📷 Сфотографируй задачу — я распознаю текст и решу.\n✏️ Или напиши текстом.', 'ai');
 };
 
-// ===== УПРАВЛЕНИЕ РЕЖИМАМИ =====
 function setMode(mode) {
     currentMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    showToast(`Режим: ${CONFIG.MODES[mode].name}`);
+    showToast(`Режим: ${mode === 'tutor' ? 'Репетитор' : mode === 'lawyer' ? 'Юрист' : 'Психолог'}`);
 }
 
-// ===== ЧАТ =====
 function addMessage(text, type, image = null) {
     const div = document.createElement('div');
     div.className = `message ${type}`;
-    if (image) {
-        div.innerHTML = `<img src="${image}" style="max-width:200px;border-radius:8px;"><br>${text}`;
-    } else {
-        div.innerHTML = text;
-    }
+    div.innerHTML = image ? `<img src="${image}" style="max-width:200px;border-radius:8px;"><br>${text}` : text;
     document.getElementById('messages').appendChild(div);
     document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
 }
@@ -303,10 +216,7 @@ function clearChat() {
 
 // ===== КАМЕРА =====
 async function startCamera() {
-    if (!isPro && messageCount >= MAX_FREE) {
-        showToast('Лимит 20 решений/день');
-        return;
-    }
+    if (messageCount >= MAX_FREE) { showToast('Лимит 20 решений/день'); return; }
     
     const modal = document.getElementById('camera-modal');
     const video = document.getElementById('camera-video');
@@ -317,7 +227,6 @@ async function startCamera() {
         modal.classList.add('active');
     } catch (err) {
         showToast('Нет доступа к камере');
-        console.error(err);
     }
 }
 
@@ -325,14 +234,12 @@ function closeCamera() {
     const modal = document.getElementById('camera-modal');
     const video = document.getElementById('camera-video');
     const stream = video.srcObject;
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
+    if (stream) stream.getTracks().forEach(track => track.stop());
     video.srcObject = null;
     modal.classList.remove('active');
 }
 
-// ===== OCR + ОБРАБОТКА ФОТО =====
+// ===== OCR + ОТПРАВКА =====
 async function takePhoto() {
     const video = document.getElementById('camera-video');
     const canvas = document.getElementById('camera-canvas');
@@ -343,96 +250,78 @@ async function takePhoto() {
     ctx.drawImage(video, 0, 0);
     
     const imageData = canvas.toDataURL('image/jpeg', 0.9);
-    lastPhotoBase64 = imageData;
-    localStorage.setItem('last_photo', imageData);
-    
     closeCamera();
     
-    if (!isPro && messageCount >= MAX_FREE) {
-        showToast('Лимит исчерпан');
-        return;
-    }
+    if (messageCount >= MAX_FREE) { showToast('Лимит исчерпан'); return; }
 
     addMessage('[📷 Фото задачи]', 'user', imageData);
-    showToast('🔍 Распознаю текст...');
     document.getElementById('typing').classList.add('active');
+    showToast('🔍 Распознаю текст (Tesseract)...');
 
     try {
-        // OCR через Tesseract
+        // OCR через Tesseract (локально, бесплатно)
         const result = await Tesseract.recognize(imageData, 'rus+eng', {
             logger: m => console.log(m)
         });
         
         const text = result.data.text.trim();
-        console.log('OCR:', text);
-        
         document.getElementById('typing').classList.remove('active');
         
         if (!text || text.length < 3) {
-            addMessageWithVpnOption('⚠️ Текст не распознан. Попробуйте GPT-4 Vision (лучше видит формулы).');
+            addMessage('⚠️ Не удалось распознать текст. Попробуйте сфотографировать четче или введите текст вручную.', 'ai');
             return;
         }
 
-        // Показываем результат OCR с кнопками
-        showOcrResult(text);
+        // Показываем распознанное с кнопками
+        showOcrResult(text, imageData);
 
     } catch (err) {
         document.getElementById('typing').classList.remove('active');
-        console.error(err);
-        addMessageWithVpnOption('❌ Ошибка OCR. Попробуйте GPT-4 Vision.');
+        addMessage('❌ Ошибка распознавания: ' + err.message, 'ai');
     }
 }
 
-function showOcrResult(text) {
+function showOcrResult(text, imageData) {
     const div = document.createElement('div');
     div.className = 'message ai';
     div.innerHTML = `
-        📝 Распознано: <em>"${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"</em>
+        📝 <strong>Распознано:</strong><br>
+        <em style="opacity:0.8;">"${text.substring(0, 150)}${text.length > 150 ? '...' : ''}"</em>
         <div class="action-buttons">
-            <button class="action-btn" onclick="solveWithText('${text.replace(/'/g, "\\'")}')">✅ Решить (без VPN)</button>
-            <button class="action-btn" onclick="document.getElementById('msg-input').value='${text.replace(/'/g, "\\'")}'">✏️ Править</button>
-            <button class="action-btn vpn-btn" onclick="solveWithVision()">🌐 GPT-4 Vision (VPN)</button>
+            <button class="action-btn" onclick="solveOcrText('${text.replace(/'/g, "\\'")}')">✅ Решить</button>
+            <button class="action-btn" onclick="editText('${text.replace(/'/g, "\\'")}')">✏️ Исправить</button>
         </div>
     `;
     document.getElementById('messages').appendChild(div);
     document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+    
+    // Автоматически подставляем в поле ввода
+    document.getElementById('msg-input').value = text;
 }
 
-function addMessageWithVpnOption(text) {
-    const div = document.createElement('div');
-    div.className = 'message ai';
-    div.innerHTML = text + `
-        <div class="action-buttons">
-            <button class="action-btn vpn-btn" onclick="solveWithVision()">🌐 Попробовать GPT-4 Vision</button>
-        </div>
-    `;
-    document.getElementById('messages').appendChild(div);
+function editText(text) {
+    document.getElementById('msg-input').value = text;
+    document.getElementById('msg-input').focus();
 }
 
-// ===== ОТПРАВКА В API =====
-async function sendMessage() {
+async function solveOcrText(text) {
+    await sendMessage(text);
+}
+
+// ===== ОТПРАВКА В DEEPSEEK =====
+async function sendMessage(customText = null) {
     const input = document.getElementById('msg-input');
-    const text = input.value.trim();
+    const text = customText || input.value.trim();
+    
     if (!text) return;
-    
-    if (!isPro && messageCount >= MAX_FREE) {
-        showToast('Лимит 20 решений/день');
-        return;
+    if (messageCount >= MAX_FREE) { showToast('Лимит 20 решений/день'); return; }
+
+    if (!customText) {
+        addMessage(text, 'user');
+        input.value = '';
     }
-
-    addMessage(text, 'user');
-    input.value = '';
     
-    await solveWithText(text);
-}
-
-async function solveWithText(text) {
-    if (!isPro && messageCount >= MAX_FREE) {
-        showToast('Лимит исчерпан');
-        return;
-    }
-
-    showToast('🤔 Думаю...');
+    showToast('🤔 Решаю через DeepSeek...');
     document.getElementById('typing').classList.add('active');
 
     try {
@@ -453,70 +342,16 @@ async function solveWithText(text) {
         if (!response.ok) throw new Error('Ошибка сети');
         
         const data = await response.json();
-        addMessage(data.answer + '<br><br><i style="font-size:12px;opacity:0.7;">🤖 DeepSeek (без VPN)</i>', 'ai');
+        addMessage(data.answer + '<br><br><i style="font-size:12px;opacity:0.6;">🤖 DeepSeek (без VPN)</i>', 'ai');
         
-        incrementUsage();
+        // Увеличиваем счетчик
+        messageCount++;
+        localStorage.setItem(`usage_${new Date().toDateString()}`, messageCount);
+        updateCredits();
 
     } catch (err) {
         document.getElementById('typing').classList.remove('active');
         addMessage('❌ Ошибка: ' + err.message, 'ai');
-    }
-}
-
-async function solveWithVision() {
-    if (!lastPhotoBase64) {
-        showToast('Нет фото. Сделайте снимок.');
-        return;
-    }
-    
-    if (!isPro && messageCount >= MAX_FREE) {
-        showToast('Лимит исчерпан');
-        return;
-    }
-
-    showToast('🌐 Отправляю через GPT-4 (нужен VPN)...');
-    document.getElementById('typing').classList.add('active');
-
-    try {
-        const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/solve-vision`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}`
-            },
-            body: JSON.stringify({
-                imageBase64: lastPhotoBase64,
-                mode: currentMode
-            })
-        });
-
-        document.getElementById('typing').classList.remove('active');
-        
-        if (!response.ok) {
-            const err = await response.json();
-            if (err.error && err.error.includes('fetch')) {
-                throw new Error('Нужен VPN или включите его');
-            }
-            throw new Error(err.error || 'Ошибка сервера');
-        }
-        
-        const data = await response.json();
-        addMessage(data.answer + '<br><br><i style="font-size:12px;opacity:0.7;">🌐 GPT-4 Vision (с VPN)</i>', 'ai');
-        
-        incrementUsage();
-
-    } catch (err) {
-        document.getElementById('typing').classList.remove('active');
-        addMessage('❌ ' + err.message + '<br><br>Попробуйте ввести текст задачи вручную.', 'ai');
-    }
-}
-
-function incrementUsage() {
-    if (!isPro) {
-        messageCount++;
-        const today = new Date().toDateString();
-        localStorage.setItem(`usage_${today}`, messageCount);
-        updateCredits();
     }
 }
 </script>
